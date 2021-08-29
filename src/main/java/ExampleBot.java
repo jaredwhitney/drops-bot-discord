@@ -70,9 +70,7 @@ public final class ExampleBot
 		final String authHandlerUrl = settingsRS.getString("authHandler");
 		
 		HttpServer server = new HttpServer(settingsRS.getInt("serverPort"));
-		final String token = settingsRS.getString("botToken");
-		final DiscordClient client = DiscordClient.create(token);
-		final GatewayDiscordClient gateway = client.login().block();
+		final String botToken = settingsRS.getString("botToken");
 		
 		ResultSet cardPackRS = statement.executeQuery("SELECT * from cardPack");
 		while (cardPackRS.next())
@@ -162,472 +160,495 @@ public final class ExampleBot
 		}
 		System.out.println("Loaded dungeon info: " + cieNum + " entries in " + cioNum + " fields");
 		
-		gateway.on(MessageCreateEvent.class).subscribe(event -> {
-			final Message message = event.getMessage();
-			if ("~help".replaceAll("\\~", botPrefix).equalsIgnoreCase(message.getContent().split(" ")[0].trim()))
-			{
-				final GuildMessageChannel channel = (GuildMessageChannel)message.getChannel().block();
-				channel.createMessage("Commands:\n  ~drop\n  ~inv\n  ~view [id]\n  ~dg\n  ~cd\n  ~help".replaceAll("\\~", botPrefix)).block();
-			}
-			if ("~drop".replaceAll("\\~", botPrefix).equalsIgnoreCase(message.getContent().split(" ")[0].trim()))
-			{
-				final GuildMessageChannel channel = (GuildMessageChannel)message.getChannel().block();
-				Long userLastDrop = dropTime.get(message.getAuthor().orElseThrow(null).getId().asString());
-				if (userLastDrop != null && System.currentTimeMillis()-userLastDrop < dropCooldownMillis)
-				{
-					channel.createMessage("Sorry " + message.getAuthor().orElseThrow(null).asMember(channel.getGuild().block().getId()).block().getDisplayName() +", you need to wait another " + formatDuration(dropCooldownMillis-(System.currentTimeMillis()-userLastDrop)) + " to drop :(").subscribe();
+		try
+		{
+			AuthHandler auth = new AuthHandler(authHandlerUrl);
+			auth.registerCallbackEndpoint("/auth/callback");
+			server.accept((req) -> {
+				if (auth.handle(req, "drops-admin"))
 					return;
-				}
-				dropTime.put(message.getAuthor().orElseThrow(null).getId().asString(), System.currentTimeMillis());
-				String cardStr = "", cardStrS = "";
-				for (int i = 0; i < dropNumCards; i++)
+				if (req.matches(HttpVerb.GET, "/") || req.matches(HttpVerb.GET, "/index.html"))
 				{
-					String cardn = cards[(int)(Math.random()*cards.length)];
-					String[] cardInf = genCard(cardn);
-					cardStr += (i>0?"+":"")+cardInf[0] + ((char)4) + cardInf[1] + ((char)4) + cardInf[2] + ((char)4) + cardInf[3];
-					cardStrS += (i>0?"+":"")+cardn;
+					req.respond("<body>"
+						+ "<a href=\"/admin/settings\">General Settings</a><br>"
+						+ "<a href=\"/admin/cardpacks\">View / edit card packs</a><br>"
+						+ "<a href=\"/admin/cards\">View / edit cards</a><br>"
+						+ "<a href=\"https://discordapp.com/api/oauth2/authorize?client_id=" + botClientId + "&permissions=243336208192&scope=bot\">Add drops bot to a Discord server</a><br>"
+					+ "</body>");
 				}
-				final String cardStrF = cardStr;
-				final String cardStrFS = cardStrS;
-				try
-				{
-					riOwner.put(message.getAuthor().orElseThrow(null).getId().asString(), cardStrFS);
-					BufferedImage combined = stitchImages(cardStrFS.split("\\+"));
-					ByteArrayOutputStream baos = new ByteArrayOutputStream();
-					ImageIO.write(combined, "webp", baos);
-					renderedImage.put(cardStrFS, baos.toByteArray());
-					System.out.println(cardStrFS);
-				}
-				catch (Exception ex){ex.printStackTrace();}
-				channel.createEmbed(spec -> {
-					var temp = spec.setColor(Color.RED)
-					// .setAuthor("setAuthor", "https://drops.0k.rip", "https://drops.0k.rip/img/botprofile.png")
-					.setThumbnail(message.getAuthor().orElseThrow(null).getAvatarUrl())
-					.setTitle("Drops for " + message.getAuthor().orElseThrow(null).asMember(channel.getGuild().block().getId()).block().getDisplayName() + ":")
-					.setDescription("Pick a card to keep:");
-					for (int i = 0; i < dropNumCards; i++)
-					{
-						temp = temp.addField("Card " + (i+1), getCardDisplayName(cardStrFS.split("\\+")[i]), true);
-					}
-					temp.setImage("https://drops.0k.rip/cardpack?" + cardStrFS)
-					.setFooter("drops?", "https://drops.0k.rip/img/botprofile.png")
-					.setTimestamp(Instant.now());
-				}).flatMap(msg -> {String author = message.getAuthor().orElseThrow(null).getId().asString(); dropWaiting.put(author, new String[]{((Message)msg).getId().asString(), cardStrF}); dropChannel.put(author, channel);
-				var temp = msg.addReaction(ReactionEmoji.unicode(new String(new byte[]{(byte)(0x31),(byte)-17,(byte)-72,(byte)-113,(byte)-30,(byte)-125,(byte)-93})));
-				for (int i = 1; i < dropNumCards; i++)
-					temp = temp.then(msg.addReaction(ReactionEmoji.unicode(new String(new byte[]{(byte)(0x31+i),(byte)-17,(byte)-72,(byte)-113,(byte)-30,(byte)-125,(byte)-93}))));
-				return temp;
-				}).subscribe();
-			}
-			if ("~inv".replaceAll("\\~", botPrefix).equalsIgnoreCase(message.getContent().split(" ")[0].trim()))
-			{
-				final GuildMessageChannel channel = (GuildMessageChannel)message.getChannel().block();
-				String authoru = message.getAuthor().orElseThrow().asMember(channel.getGuild().block().getId()).block().getDisplayName();
-				String author = message.getAuthor().orElseThrow().getId().asString();
-				String cardsStr = "";
-				if (inventory.get(author) != null)
-				{
-					for (String s : inventory.get(author))
-					{
-						String[] cardparts = s.split(""+(char)4);
-						cardsStr += " - " + getCardDisplayName(cardparts[0]) + " [" + cardparts[1] + "] (" + cardparts[2] + " stars, level " + cardparts[3] + ")\n";
-					}
-				}
-				channel.createMessage(authoru + "'s Inventory:\n" + cardsStr).block();
-			}
-			if ("~view".replaceAll("\\~", botPrefix).equalsIgnoreCase(message.getContent().split(" ")[0].trim()))
-			{
-				final GuildMessageChannel channel = (GuildMessageChannel)message.getChannel().block();
-				String id = message.getContent().split(" ")[1].trim();
-				for (ArrayList<String> cardlist : inventory.values())
-					for (String card : cardlist)
-					{
-						String[] parts = card.split(""+(char)4);
-						if (parts[1].equals(id))
-						{
-							channel.createEmbed(spec ->
-								spec.setTitle(getCardDisplayName(parts[0]))
-								.setDescription(getCardDescription(parts[0]))
-								.addField("ID", parts[1], true)
-								.addField("Stars", parts[2], true)
-								.addField("Level", parts[3], true)
-								.setImage("https://drops.0k.rip/card/" + parts[0])
-								.setFooter("drops?", "https://drops.0k.rip/img/botprofile.png")
-								.setTimestamp(Instant.now())
-							).subscribe();
-							return;
-						}
-					}
-				channel.createMessage("Sorry " + message.getAuthor().orElseThrow().asMember(channel.getGuild().block().getId()).block().getDisplayName() +", I couldn't find card \"" + id + "\" :(").subscribe();
-				return;
-			}
-			if ("~dg".replaceAll("\\~", botPrefix).equalsIgnoreCase(message.getContent().split(" ")[0].trim()))
-			{
-				final GuildMessageChannel channel = (GuildMessageChannel)message.getChannel().block();
-				Long userLastDrop = dgTime.get(message.getAuthor().orElseThrow(null).getId().asString());
-				if (userLastDrop != null && System.currentTimeMillis()-userLastDrop < dungeonCooldownMillis)
-				{
-					channel.createMessage("Sorry " + message.getAuthor().orElseThrow(null).asMember(channel.getGuild().block().getId()).block().getDisplayName() +", you need to wait another " + formatDuration(dungeonCooldownMillis-(System.currentTimeMillis()-userLastDrop)) + " to attempt a dungeon :(").subscribe();
+				if (!auth.enforceValidCredentials("drops-admin"))
 					return;
-				}
-				dgTime.put(message.getAuthor().orElseThrow(null).getId().asString(), System.currentTimeMillis());
-				while (true)
+				if (req.matches(HttpVerb.GET, "/cardpack"))
 				{
-					String cardn = cards[(int)(Math.random()*cards.length)];
-					List<String> dglist = new ArrayList<String>(dgopts.keySet());
-					ArrayList<String> possibleCategories = getCardDungeonCategories(cardn);
-					for (int i = 0; i < possibleCategories.size(); i++)
+					try
 					{
-						if (dgopts.get(possibleCategories.get(i)).size() < dungeonNumOptions)
+						String[] packCards = req.parameters.split("\\Q&nonce=\\E")[0].split("\\+");
+						System.out.println(req.parameters.split("\\Q&nonce=\\E")[0]);
+						byte[] data = renderedImage.get(req.parameters.split("\\Q&nonce=\\E")[0]);
+						if (data == null)
 						{
-							possibleCategories.remove(i);
-							i--;
+							BufferedImage combined = stitchImages(packCards);
+							ByteArrayOutputStream baos = new ByteArrayOutputStream();
+							ImageIO.write(combined, "webp", baos);
+							data = baos.toByteArray();
 						}
+						System.out.println("Send response");
+						req.respond("image/webp", data);
+						System.out.println("Sent!");
 					}
-					if (possibleCategories.size() != 0)
-					{
-						String category = possibleCategories.get((int)(Math.random()*possibleCategories.size()));
-						ArrayList<String> correctOptns = cardInfo.get(cardn).get(category);
-						String correctOptn = correctOptns.get((int)(Math.random()*correctOptns.size()));
-						String[] opts = new String[dungeonNumOptions];
-						int correctIndex = (int)(Math.random()*opts.length);
-						opts[correctIndex] = correctOptn;
-						ArrayList<String> possibleChoices = dgopts.get(category);
-						for (int i = 0; i < correctOptns.size(); i++)
-							possibleChoices.remove(correctOptns.get(i));
-						if (possibleChoices.size()+1 < dungeonNumOptions)
-							continue;
-						Collections.shuffle(possibleChoices);
-						for (int i = 0; i < opts.length; i++)
-						{
-							if (i == correctIndex)
-								continue;
-							opts[i] = possibleChoices.get(0);
-							possibleChoices.remove(0);
-						}
-						
-						channel.createEmbed(spec -> {
-							var temp = spec.setColor(Color.RED)
-							// .setAuthor("setAuthor", "https://drops.0k.rip", "https://drops.0k.rip/img/botprofile.png")
-							.setThumbnail(message.getAuthor().orElseThrow(null).getAvatarUrl())
-							.setTitle("Dungeon for " + message.getAuthor().orElseThrow(null).asMember(channel.getGuild().block().getId()).block().getDisplayName() + ":")
-							.setDescription(getCardDisplayName(cardn) + " - " + (dgCatMap.get(category)==null?category:dgCatMap.get(category)));
-							for (int i = 0; i < opts.length; i++)
-							{
-								temp = temp.addField(new String(new byte[]{(byte)(0x31+i),(byte)-17,(byte)-72,(byte)-113,(byte)-30,(byte)-125,(byte)-93}), opts[i], true);
-							}
-							temp.setImage("https://drops.0k.rip/card/" + cardn)
-							.setFooter("drops?", "https://drops.0k.rip/img/botprofile.png")
-							.setTimestamp(Instant.now());
-						}).flatMap(msg -> {
-							String author = message.getAuthor().orElseThrow(null).getId().asString();
-							String[] optssend = new String[opts.length+1];
-							optssend[0] = ((Message)msg).getId().asString();
-							System.arraycopy(Arrays.stream(opts).map(o -> o.equals(correctOptn)?cardn:null).toArray(String[]::new), 0, optssend, 1, optssend.length-1);
-							dgWaiting.put(author, optssend);
-							var temp = msg.addReaction(ReactionEmoji.unicode(new String(new byte[]{(byte)(0x31),(byte)-17,(byte)-72,(byte)-113,(byte)-30,(byte)-125,(byte)-93})));
-							for (int i = 1; i < opts.length; i++)
-								temp = temp.then(msg.addReaction(ReactionEmoji.unicode(new String(new byte[]{(byte)(0x31+i),(byte)-17,(byte)-72,(byte)-113,(byte)-30,(byte)-125,(byte)-93}))));
-							return temp;
-						}).subscribe();
-						
-						return;
+					catch (Exception ex){
+						ex.printStackTrace();
+						req.respond(HttpStatus.NOT_FOUND_404);
 					}
 				}
-			}
-			if ("~cd".replaceAll("\\~", botPrefix).equalsIgnoreCase(message.getContent().split(" ")[0].trim()))
-			{
-				final GuildMessageChannel channel = (GuildMessageChannel)message.getChannel().block();
-				String authoru = message.getAuthor().orElseThrow().asMember(channel.getGuild().block().getId()).block().getDisplayName();
-				String author = message.getAuthor().orElseThrow().getId().asString();
-				long dropCd = dropTime.get(author) == null ? 0 : dropCooldownMillis - (System.currentTimeMillis()-dropTime.get(author));
-				long dungeonCd = dgTime.get(author) == null ? 0 : dungeonCooldownMillis - (System.currentTimeMillis()-dgTime.get(author));
-				channel.createEmbed(spec ->
-							spec.setTitle("Cooldowns")
-								.setDescription("for " + authoru)
-								.setThumbnail(message.getAuthor().orElseThrow(null).getAvatarUrl())
-								.addField("Drop", (dropCd <= 0 ? "[READY]" : formatDuration(dropCd)), false)
-								.addField("Dungeon", (dungeonCd <= 0 ? "[READY]" : formatDuration(dungeonCd)), true)
-								.setFooter("drops?", "https://drops.0k.rip/img/botprofile.png")
-								.setTimestamp(Instant.now())
-				).subscribe();
-			}
-		});
-		
-		AuthHandler auth = new AuthHandler(authHandlerUrl);
-		auth.registerCallbackEndpoint("/auth/callback");
-		server.accept((req) -> {
-			if (auth.handle(req, "drops-admin"))
-				return;
-			if (req.matches(HttpVerb.GET, "/") || req.matches(HttpVerb.GET, "/index.html"))
-			{
-				req.respond("<body>"
-					+ "<a href=\"/admin/settings\">General Settings</a><br>"
-					+ "<a href=\"/admin/cardpacks\">View / edit card packs</a><br>"
-					+ "<a href=\"/admin/cards\">View / edit cards</a><br>"
-					+ "<a href=\"https://discordapp.com/api/oauth2/authorize?client_id=" + botClientId + "&permissions=243336208192&scope=bot\">Add drops bot to a Discord server</a><br>"
-				+ "</body>");
-			}
-			if (!auth.enforceValidCredentials("drops-admin"))
-				return;
-			if (req.matches(HttpVerb.GET, "/cardpack"))
-			{
-				try
+				else if (req.matches(HttpVerb.GET, "/admin/cardpacks"))
 				{
-					String[] packCards = req.parameters.split("\\Q&nonce=\\E")[0].split("\\+");
-					System.out.println(req.parameters.split("\\Q&nonce=\\E")[0]);
-					byte[] data = renderedImage.get(req.parameters.split("\\Q&nonce=\\E")[0]);
-					if (data == null)
-					{
-						BufferedImage combined = stitchImages(packCards);
-						ByteArrayOutputStream baos = new ByteArrayOutputStream();
-						ImageIO.write(combined, "webp", baos);
-						data = baos.toByteArray();
-					}
-					System.out.println("Send response");
-					req.respond("image/webp", data);
-					System.out.println("Sent!");
-				}
-				catch (Exception ex){
-					ex.printStackTrace();
-					req.respond(HttpStatus.NOT_FOUND_404);
-				}
-			}
-			else if (req.matches(HttpVerb.GET, "/admin/cardpacks"))
-			{
-				String resp = "<body>";
-				for (String pack : cardPacks.keySet())
-				{
-					resp += "<a href=\"/admin/cardpack?name=" + pack + "\">" + pack + " (" + cardPacks.get(pack).size() + " cards)</a><br>";
-				}
-				resp += "</body>";
-				req.respond(resp);
-			}
-			else if (req.matches(HttpVerb.GET, "/admin/cardpack"))
-			{
-				String pack = req.getParam("name")[0];
-				String resp = "<body>";
-				resp += "<h2>Pack cards:</h2>";
-				for (String card : cardPacks.get(pack))
-				{
-					resp += "<a href-\"/admin/card?name=" + card + "\">" + getCardDisplayName(card) + "</a><br>";
-				}
-				resp += "</body>";
-				req.respond(resp);
-			}
-			else if (req.matches(HttpVerb.GET, "/admin/cards"))
-			{
-				String resp = "<body>";
-				for (String card : cardInfo.keySet())
-				{
-					resp += "<a href=\"/admin/card?name=" + card + "\">" + getCardDisplayName(card) + "</a><br>";
-				}
-				resp += "</body>";
-				req.respond(resp);
-			}
-			else if (req.matches(HttpVerb.GET, "/admin/card"))
-			{
-				// TODO
-				// String card = req.getParam("name")[0];
-				// req.respond("<body>"
-					// + "<form enctype=\"multipart/form-data\">"
-					// + "<label for=\"display_name\">Display Name</label>"
-					// + "<input id=\"display_name\" value=\"" + (cardInfo.get(card)==null?"":cardInfo.get(card)) + "\"></input><br>"
-					// + "<input type=\"hidden\" id=\"name\" value=\"" + card + "\"></input><br>"
-					// + "<input type=\"submit\"></input><br>"
-					// + "</form>"
-				// + "</body>");
-				req.respond(HttpStatus.NOT_FOUND_404);
-			}
-			else if (req.matches(HttpVerb.POST, "/admin/card"))
-			{
-				// TODO
-				// String card = req.getParam("name")[0];
-				// String displayName = new String(req.getMultipart("display_name")[0].filedata, java.nio.charset.StandardCharsets.UTF_8);
-				// if (displayName.trim().length() == 0)
-					// displayName = null;
-				// req.respond(HttpStatus.TEMPORARY_REDIRECT_302, "Location: /admin/card?name=" + card);
-				req.respond(HttpStatus.NOT_FOUND_404);
-			}
-			else if (req.matches(HttpVerb.GET, "/admin/infofield"))
-			{
-				// TODO
-				req.respond(HttpStatus.NOT_FOUND_404);
-			}
-			else if (req.matches(HttpVerb.POST, "/admin/infofield"))
-			{
-				// TODO
-				req.respond(HttpStatus.NOT_FOUND_404);
-			}
-			else if (req.matches(HttpVerb.GET, "/admin/settings"))
-			{
-				try
-				{
-					ResultSet settingsRS2 = statement.executeQuery("SELECT * FROM settings LIMIT 1");
-					settingsRS2.next();
 					String resp = "<body>";
-					resp += "<form enctype=\"multipart/form-data\" action=\"/admin/settings\" method=\"post\">";
-					resp += "<h1>Settings</h1>";
-					resp += "<h2>Drops</h2>";
-					resp += "Number of cards to drop at once: <input name=\"dropNumCards\" value=\"" + settingsRS2.getInt("dropNumCards") + "\"/><br>";
-					resp += "Drop cooldown (milliseconds): <input name=\"dropCooldownMillis\" value=\"" + settingsRS2.getInt("dropCooldownMillis") + "\"/><br>";
-					resp += "<h2>Dungeon</h2>";
-					resp += "Number of dungeon answers to choose from: <input name=\"dungeonOptions\" value=\"" + settingsRS2.getInt("dungeonOptions") + "\"/><br>";
-					resp += "Dungeon cooldown (milliseconds): <input name=\"dungeonCooldownMillis\" value=\"" + settingsRS2.getInt("dungeonCooldownMillis") + "\"/><br>";
-					resp += "<h2>Bot Config</h2>";
-					resp += "Bot prefix: <input name=\"botPrefix\" value=\"" + settingsRS2.getString("botPrefix") + "\"/><br>";
-					resp += "Bot client ID: <input name=\"botClientId\" value=\"" + settingsRS2.getString("botClientId") + "\"/><br>";
-					resp += "Bot token (RESTART REQUIRED): <input name=\"botToken\" value=\"" + settingsRS2.getString("botToken") + "\"/><br>";
-					resp += "<h2>App Config (RESTART REQUIRED for all)</h2>";
-					resp += "Local Port: <input name=\"serverPort\" value=\"" + settingsRS2.getInt("serverPort") + "\"/><br>";
-					resp += "Public URL: <input name=\"siteUrl\" value=\"" + settingsRS2.getString("siteUrl") + "\"/><br>";
-					resp += "Auth Handler Public URL: <input name=\"authHandler\" value=\"" + settingsRS2.getString("authHandler") + "\"/><br>";
-					resp += "Card Images Folder: <input name=\"cardsFolder\" value=\"" + settingsRS2.getString("cardsFolder") + "\"/><br>";
-					resp += "<input type=\"submit\" value=\"Save changes\"/>";
-					resp += "</form>";
-					resp += "<a href=\"/\">Cancel</a>";
+					for (String pack : cardPacks.keySet())
+					{
+						resp += "<a href=\"/admin/cardpack?name=" + pack + "\">" + pack + " (" + cardPacks.get(pack).size() + " cards)</a><br>";
+					}
 					resp += "</body>";
 					req.respond(resp);
 				}
-				catch (SQLException ex)
+				else if (req.matches(HttpVerb.GET, "/admin/cardpack"))
 				{
-					req.respond("Internal error: " + ex.getMessage());
+					String pack = req.getParam("name")[0];
+					String resp = "<body>";
+					resp += "<h2>Pack cards:</h2>";
+					for (String card : cardPacks.get(pack))
+					{
+						resp += "<a href-\"/admin/card?name=" + card + "\">" + getCardDisplayName(card) + "</a><br>";
+					}
+					resp += "</body>";
+					req.respond(resp);
 				}
-			}
-			else if (req.matches(HttpVerb.POST, "/admin/settings"))
-			{
-				try
+				else if (req.matches(HttpVerb.GET, "/admin/cards"))
 				{
-					int dropNumCardsCandidate = Integer.parseInt(new String(req.getMultipart("dropNumCards")[0].filedata, java.nio.charset.StandardCharsets.UTF_8));
-					int dropCooldownMillisCandidate = Integer.parseInt(new String(req.getMultipart("dropCooldownMillis")[0].filedata, java.nio.charset.StandardCharsets.UTF_8));
-					int dungeonNumOptionsCandidate = Integer.parseInt(new String(req.getMultipart("dungeonOptions")[0].filedata, java.nio.charset.StandardCharsets.UTF_8));
-					int dungeonCooldownMillisCandidate = Integer.parseInt(new String(req.getMultipart("dungeonCooldownMillis")[0].filedata, java.nio.charset.StandardCharsets.UTF_8));
-					String botPrefixCandidate = new String(req.getMultipart("botPrefix")[0].filedata, java.nio.charset.StandardCharsets.UTF_8);
-					String botClientIdCandidate = new String(req.getMultipart("botClientId")[0].filedata, java.nio.charset.StandardCharsets.UTF_8);
-					statement.execute("UPDATE settings SET "
-						+ "dropNumCards = " + dropNumCardsCandidate + ","
-						+ "dropCooldownMillis = " + dropCooldownMillisCandidate + ","
-						+ "dungeonOptions = " + dungeonNumOptionsCandidate + ","
-						+ "dungeonCooldownMillis = " + dungeonCooldownMillisCandidate + ","
-						+ "serverPort = " + Integer.parseInt(new String(req.getMultipart("serverPort")[0].filedata, java.nio.charset.StandardCharsets.UTF_8)) + ","
-						+ "botPrefix = '" + botPrefixCandidate + "',"
-						+ "botClientId = '" + botClientIdCandidate + "',"
-						+ "botToken = '" + new String(req.getMultipart("botToken")[0].filedata, java.nio.charset.StandardCharsets.UTF_8) + "',"
-						+ "siteUrl = '" + new String(req.getMultipart("siteUrl")[0].filedata, java.nio.charset.StandardCharsets.UTF_8) + "',"
-						+ "authHandler = '" + new String(req.getMultipart("authHandler")[0].filedata, java.nio.charset.StandardCharsets.UTF_8) + "',"
-						+ "cardsFolder = '" + new String(req.getMultipart("cardsFolder")[0].filedata, java.nio.charset.StandardCharsets.UTF_8) + "'"
-					);
-					dropNumCards = dropNumCardsCandidate;
-					dropCooldownMillis = dropCooldownMillisCandidate;
-					dungeonNumOptions = dungeonNumOptionsCandidate;
-					dungeonCooldownMillis = dungeonCooldownMillisCandidate;
-					botPrefix = botPrefixCandidate;
-					botClientId = botClientIdCandidate;
-					req.respondWithHeaders1(
-						HttpStatus.TEMPORARY_REDIRECT_302,
-						"Redirecting you to <a href=\"/admin/settings\">/admin/settings</a>",
-						"Location: /admin/settings"
-					);
+					String resp = "<body>";
+					for (String card : cardInfo.keySet())
+					{
+						resp += "<a href=\"/admin/card?name=" + card + "\">" + getCardDisplayName(card) + "</a><br>";
+					}
+					resp += "</body>";
+					req.respond(resp);
 				}
-				catch (SQLException ex)
+				else if (req.matches(HttpVerb.GET, "/admin/card"))
 				{
-					req.respond("Internal error: " + ex.getMessage());
+					// TODO
+					// String card = req.getParam("name")[0];
+					// req.respond("<body>"
+						// + "<form enctype=\"multipart/form-data\">"
+						// + "<label for=\"display_name\">Display Name</label>"
+						// + "<input id=\"display_name\" value=\"" + (cardInfo.get(card)==null?"":cardInfo.get(card)) + "\"></input><br>"
+						// + "<input type=\"hidden\" id=\"name\" value=\"" + card + "\"></input><br>"
+						// + "<input type=\"submit\"></input><br>"
+						// + "</form>"
+					// + "</body>");
+					req.respond(HttpStatus.NOT_FOUND_404);
 				}
-			}
-			else
-			{
-				req.respond(HttpStatus.NOT_FOUND_404);
-			}
-		});
+				else if (req.matches(HttpVerb.POST, "/admin/card"))
+				{
+					// TODO
+					// String card = req.getParam("name")[0];
+					// String displayName = new String(req.getMultipart("display_name")[0].filedata, java.nio.charset.StandardCharsets.UTF_8);
+					// if (displayName.trim().length() == 0)
+						// displayName = null;
+					// req.respond(HttpStatus.TEMPORARY_REDIRECT_302, "Location: /admin/card?name=" + card);
+					req.respond(HttpStatus.NOT_FOUND_404);
+				}
+				else if (req.matches(HttpVerb.GET, "/admin/infofield"))
+				{
+					// TODO
+					req.respond(HttpStatus.NOT_FOUND_404);
+				}
+				else if (req.matches(HttpVerb.POST, "/admin/infofield"))
+				{
+					// TODO
+					req.respond(HttpStatus.NOT_FOUND_404);
+				}
+				else if (req.matches(HttpVerb.GET, "/admin/settings"))
+				{
+					try
+					{
+						ResultSet settingsRS2 = statement.executeQuery("SELECT * FROM settings LIMIT 1");
+						settingsRS2.next();
+						String resp = "<body>";
+						resp += "<form enctype=\"multipart/form-data\" action=\"/admin/settings\" method=\"post\">";
+						resp += "<h1>Settings</h1>";
+						resp += "<h2>Drops</h2>";
+						resp += "Number of cards to drop at once: <input name=\"dropNumCards\" value=\"" + settingsRS2.getInt("dropNumCards") + "\"/><br>";
+						resp += "Drop cooldown (milliseconds): <input name=\"dropCooldownMillis\" value=\"" + settingsRS2.getInt("dropCooldownMillis") + "\"/><br>";
+						resp += "<h2>Dungeon</h2>";
+						resp += "Number of dungeon answers to choose from: <input name=\"dungeonOptions\" value=\"" + settingsRS2.getInt("dungeonOptions") + "\"/><br>";
+						resp += "Dungeon cooldown (milliseconds): <input name=\"dungeonCooldownMillis\" value=\"" + settingsRS2.getInt("dungeonCooldownMillis") + "\"/><br>";
+						resp += "<h2>Bot Config</h2>";
+						resp += "Bot prefix: <input name=\"botPrefix\" value=\"" + settingsRS2.getString("botPrefix") + "\"/><br>";
+						resp += "Bot client ID: <input name=\"botClientId\" value=\"" + settingsRS2.getString("botClientId") + "\"/><br>";
+						resp += "Bot token (RESTART REQUIRED): <input name=\"botToken\" value=\"" + settingsRS2.getString("botToken") + "\"/><br>";
+						resp += "<h2>App Config (RESTART REQUIRED for all)</h2>";
+						resp += "Local Port: <input name=\"serverPort\" value=\"" + settingsRS2.getInt("serverPort") + "\"/><br>";
+						resp += "Public URL: <input name=\"siteUrl\" value=\"" + settingsRS2.getString("siteUrl") + "\"/><br>";
+						resp += "Auth Handler Public URL: <input name=\"authHandler\" value=\"" + settingsRS2.getString("authHandler") + "\"/><br>";
+						resp += "Card Images Folder: <input name=\"cardsFolder\" value=\"" + settingsRS2.getString("cardsFolder") + "\"/><br>";
+						resp += "<input type=\"submit\" value=\"Save changes\"/>";
+						resp += "</form>";
+						resp += "<a href=\"/\">Cancel</a>";
+						resp += "</body>";
+						req.respond(resp);
+					}
+					catch (SQLException ex)
+					{
+						req.respond("Internal error: " + ex.getMessage());
+					}
+				}
+				else if (req.matches(HttpVerb.POST, "/admin/settings"))
+				{
+					try
+					{
+						int dropNumCardsCandidate = Integer.parseInt(new String(req.getMultipart("dropNumCards")[0].filedata, java.nio.charset.StandardCharsets.UTF_8));
+						int dropCooldownMillisCandidate = Integer.parseInt(new String(req.getMultipart("dropCooldownMillis")[0].filedata, java.nio.charset.StandardCharsets.UTF_8));
+						int dungeonNumOptionsCandidate = Integer.parseInt(new String(req.getMultipart("dungeonOptions")[0].filedata, java.nio.charset.StandardCharsets.UTF_8));
+						int dungeonCooldownMillisCandidate = Integer.parseInt(new String(req.getMultipart("dungeonCooldownMillis")[0].filedata, java.nio.charset.StandardCharsets.UTF_8));
+						String botPrefixCandidate = new String(req.getMultipart("botPrefix")[0].filedata, java.nio.charset.StandardCharsets.UTF_8);
+						String botClientIdCandidate = new String(req.getMultipart("botClientId")[0].filedata, java.nio.charset.StandardCharsets.UTF_8);
+						statement.execute("UPDATE settings SET "
+							+ "dropNumCards = " + dropNumCardsCandidate + ","
+							+ "dropCooldownMillis = " + dropCooldownMillisCandidate + ","
+							+ "dungeonOptions = " + dungeonNumOptionsCandidate + ","
+							+ "dungeonCooldownMillis = " + dungeonCooldownMillisCandidate + ","
+							+ "serverPort = " + Integer.parseInt(new String(req.getMultipart("serverPort")[0].filedata, java.nio.charset.StandardCharsets.UTF_8)) + ","
+							+ "botPrefix = '" + botPrefixCandidate + "',"
+							+ "botClientId = '" + botClientIdCandidate + "',"
+							+ "botToken = '" + new String(req.getMultipart("botToken")[0].filedata, java.nio.charset.StandardCharsets.UTF_8) + "',"
+							+ "siteUrl = '" + new String(req.getMultipart("siteUrl")[0].filedata, java.nio.charset.StandardCharsets.UTF_8) + "',"
+							+ "authHandler = '" + new String(req.getMultipart("authHandler")[0].filedata, java.nio.charset.StandardCharsets.UTF_8) + "',"
+							+ "cardsFolder = '" + new String(req.getMultipart("cardsFolder")[0].filedata, java.nio.charset.StandardCharsets.UTF_8) + "'"
+						);
+						dropNumCards = dropNumCardsCandidate;
+						dropCooldownMillis = dropCooldownMillisCandidate;
+						dungeonNumOptions = dungeonNumOptionsCandidate;
+						dungeonCooldownMillis = dungeonCooldownMillisCandidate;
+						botPrefix = botPrefixCandidate;
+						botClientId = botClientIdCandidate;
+						req.respondWithHeaders1(
+							HttpStatus.TEMPORARY_REDIRECT_302,
+							"Redirecting you to <a href=\"/admin/settings\">/admin/settings</a>",
+							"Location: /admin/settings"
+						);
+					}
+					catch (SQLException ex)
+					{
+						req.respond("Internal error: " + ex.getMessage());
+					}
+				}
+				else
+				{
+					req.respond(HttpStatus.NOT_FOUND_404);
+				}
+			});
+			System.out.println("The web server should be up and running!");
+		}
+		catch (Exception ex)
+		{
+			System.out.println("Uh-oh! Unhandled exception in the web server code.");
+			ex.printStackTrace();
+			System.out.println("Note: The Discord bot will *NOT* be started.");
+			System.exit(0);
+		}
 		
-		gateway.getEventDispatcher().on(ReactionAddEvent.class).subscribe(
-			event -> {
-				try
+		try
+		{
+			final DiscordClient client = DiscordClient.create(botToken);
+			final GatewayDiscordClient gateway = client.login().block();
+			
+			gateway.on(MessageCreateEvent.class).subscribe(event -> {
+				final Message message = event.getMessage();
+				if ("~help".replaceAll("\\~", botPrefix).equalsIgnoreCase(message.getContent().split(" ")[0].trim()))
 				{
-					event.getEmoji().asUnicodeEmoji().orElseThrow();
+					final GuildMessageChannel channel = (GuildMessageChannel)message.getChannel().block();
+					channel.createMessage("Commands:\n  ~drop\n  ~inv\n  ~view [id]\n  ~dg\n  ~cd\n  ~help".replaceAll("\\~", botPrefix)).block();
 				}
-				catch (Exception ex)
+				if ("~drop".replaceAll("\\~", botPrefix).equalsIgnoreCase(message.getContent().split(" ")[0].trim()))
 				{
+					final GuildMessageChannel channel = (GuildMessageChannel)message.getChannel().block();
+					Long userLastDrop = dropTime.get(message.getAuthor().orElseThrow(null).getId().asString());
+					if (userLastDrop != null && System.currentTimeMillis()-userLastDrop < dropCooldownMillis)
+					{
+						channel.createMessage("Sorry " + message.getAuthor().orElseThrow(null).asMember(channel.getGuild().block().getId()).block().getDisplayName() +", you need to wait another " + formatDuration(dropCooldownMillis-(System.currentTimeMillis()-userLastDrop)) + " to drop :(").subscribe();
+						return;
+					}
+					dropTime.put(message.getAuthor().orElseThrow(null).getId().asString(), System.currentTimeMillis());
+					String cardStr = "", cardStrS = "";
+					for (int i = 0; i < dropNumCards; i++)
+					{
+						String cardn = cards[(int)(Math.random()*cards.length)];
+						String[] cardInf = genCard(cardn);
+						cardStr += (i>0?"+":"")+cardInf[0] + ((char)4) + cardInf[1] + ((char)4) + cardInf[2] + ((char)4) + cardInf[3];
+						cardStrS += (i>0?"+":"")+cardn;
+					}
+					final String cardStrF = cardStr;
+					final String cardStrFS = cardStrS;
+					try
+					{
+						riOwner.put(message.getAuthor().orElseThrow(null).getId().asString(), cardStrFS);
+						BufferedImage combined = stitchImages(cardStrFS.split("\\+"));
+						ByteArrayOutputStream baos = new ByteArrayOutputStream();
+						ImageIO.write(combined, "webp", baos);
+						renderedImage.put(cardStrFS, baos.toByteArray());
+						System.out.println(cardStrFS);
+					}
+					catch (Exception ex){ex.printStackTrace();}
+					channel.createEmbed(spec -> {
+						var temp = spec.setColor(Color.RED)
+						// .setAuthor("setAuthor", "https://drops.0k.rip", "https://drops.0k.rip/img/botprofile.png")
+						.setThumbnail(message.getAuthor().orElseThrow(null).getAvatarUrl())
+						.setTitle("Drops for " + message.getAuthor().orElseThrow(null).asMember(channel.getGuild().block().getId()).block().getDisplayName() + ":")
+						.setDescription("Pick a card to keep:");
+						for (int i = 0; i < dropNumCards; i++)
+						{
+							temp = temp.addField("Card " + (i+1), getCardDisplayName(cardStrFS.split("\\+")[i]), true);
+						}
+						temp.setImage("https://drops.0k.rip/cardpack?" + cardStrFS)
+						.setFooter("drops?", "https://drops.0k.rip/img/botprofile.png")
+						.setTimestamp(Instant.now());
+					}).flatMap(msg -> {String author = message.getAuthor().orElseThrow(null).getId().asString(); dropWaiting.put(author, new String[]{((Message)msg).getId().asString(), cardStrF}); dropChannel.put(author, channel);
+					var temp = msg.addReaction(ReactionEmoji.unicode(new String(new byte[]{(byte)(0x31),(byte)-17,(byte)-72,(byte)-113,(byte)-30,(byte)-125,(byte)-93})));
+					for (int i = 1; i < dropNumCards; i++)
+						temp = temp.then(msg.addReaction(ReactionEmoji.unicode(new String(new byte[]{(byte)(0x31+i),(byte)-17,(byte)-72,(byte)-113,(byte)-30,(byte)-125,(byte)-93}))));
+					return temp;
+					}).subscribe();
+				}
+				if ("~inv".replaceAll("\\~", botPrefix).equalsIgnoreCase(message.getContent().split(" ")[0].trim()))
+				{
+					final GuildMessageChannel channel = (GuildMessageChannel)message.getChannel().block();
+					String authoru = message.getAuthor().orElseThrow().asMember(channel.getGuild().block().getId()).block().getDisplayName();
+					String author = message.getAuthor().orElseThrow().getId().asString();
+					String cardsStr = "";
+					if (inventory.get(author) != null)
+					{
+						for (String s : inventory.get(author))
+						{
+							String[] cardparts = s.split(""+(char)4);
+							cardsStr += " - " + getCardDisplayName(cardparts[0]) + " [" + cardparts[1] + "] (" + cardparts[2] + " stars, level " + cardparts[3] + ")\n";
+						}
+					}
+					channel.createMessage(authoru + "'s Inventory:\n" + cardsStr).block();
+				}
+				if ("~view".replaceAll("\\~", botPrefix).equalsIgnoreCase(message.getContent().split(" ")[0].trim()))
+				{
+					final GuildMessageChannel channel = (GuildMessageChannel)message.getChannel().block();
+					String id = message.getContent().split(" ")[1].trim();
+					for (ArrayList<String> cardlist : inventory.values())
+						for (String card : cardlist)
+						{
+							String[] parts = card.split(""+(char)4);
+							if (parts[1].equals(id))
+							{
+								channel.createEmbed(spec ->
+									spec.setTitle(getCardDisplayName(parts[0]))
+									.setDescription(getCardDescription(parts[0]))
+									.addField("ID", parts[1], true)
+									.addField("Stars", parts[2], true)
+									.addField("Level", parts[3], true)
+									.setImage("https://drops.0k.rip/card/" + parts[0])
+									.setFooter("drops?", "https://drops.0k.rip/img/botprofile.png")
+									.setTimestamp(Instant.now())
+								).subscribe();
+								return;
+							}
+						}
+					channel.createMessage("Sorry " + message.getAuthor().orElseThrow().asMember(channel.getGuild().block().getId()).block().getDisplayName() +", I couldn't find card \"" + id + "\" :(").subscribe();
 					return;
 				}
-				System.out.println("Found new reaction: " + event.getEmoji().asUnicodeEmoji().orElseThrow().getRaw() + " by " + event.getUserId() + " on " + event.getMessageId().asString());
-				String author = event.getUserId().asString();
-				String[] waitinfo = dropWaiting.get(author);
-				System.out.println("Found waitinfo " + waitinfo);
-				if (waitinfo != null && waitinfo[0].equals(event.getMessageId().asString()))
+				if ("~dg".replaceAll("\\~", botPrefix).equalsIgnoreCase(message.getContent().split(" ")[0].trim()))
 				{
-					System.out.println("User and message ids match! Now check if the emoji matches...");
-					String raw = event.getEmoji().asUnicodeEmoji().orElseThrow().getRaw();
-					if (inventory.get(author) == null)
-						inventory.put(author, new ArrayList<String>());
-					String cardinfo = null;
-					byte[] b = raw.getBytes();
-					System.out.println(Arrays.toString(b));
-					if (b.length == 7 && b[1] == (byte)-17 && b[2] == (byte)-72 && b[3] == (byte)-113 && b[4] == (byte)-30 && b[5] == (byte)-125 && b[6] == (byte)-93)
+					final GuildMessageChannel channel = (GuildMessageChannel)message.getChannel().block();
+					Long userLastDrop = dgTime.get(message.getAuthor().orElseThrow(null).getId().asString());
+					if (userLastDrop != null && System.currentTimeMillis()-userLastDrop < dungeonCooldownMillis)
 					{
-						System.out.println("ROUGHLY OK");
-						cardinfo = waitinfo[1].split("\\+")[raw.charAt(0)-0x31];
+						channel.createMessage("Sorry " + message.getAuthor().orElseThrow(null).asMember(channel.getGuild().block().getId()).block().getDisplayName() +", you need to wait another " + formatDuration(dungeonCooldownMillis-(System.currentTimeMillis()-userLastDrop)) + " to attempt a dungeon :(").subscribe();
+						return;
 					}
-					if (cardinfo != null)
+					dgTime.put(message.getAuthor().orElseThrow(null).getId().asString(), System.currentTimeMillis());
+					while (true)
 					{
-						String[] cardparts = cardinfo.split(""+(char)4);
-						try
+						String cardn = cards[(int)(Math.random()*cards.length)];
+						List<String> dglist = new ArrayList<String>(dgopts.keySet());
+						ArrayList<String> possibleCategories = getCardDungeonCategories(cardn);
+						for (int i = 0; i < possibleCategories.size(); i++)
 						{
-							statement.execute("INSERT INTO cardInstance(rawName, id, level, stars, owner) VALUES ('" + cardparts[0] + "', '" + cardparts[1] + "', '" + cardparts[3] + "', '" + cardparts[2] + "', '" + author + "')");
-							dropChannel.get(author).createMessage("Enjoy your new " + cardparts[2] + " star " + getCardDisplayName(cardparts[0]) + " (level " + cardparts[3] + ")").subscribe();
-							dropWaiting.remove(author);
-							if (inventory.get(author) == null)
-								inventory.put(author, new ArrayList<String>());
-							inventory.get(author).add(cardinfo);
-							idLookup.put(cardparts[1], true);
-							// saveMap(inventory, "/www/drops.0k.rip/inventory.dropdata");
+							if (dgopts.get(possibleCategories.get(i)).size() < dungeonNumOptions)
+							{
+								possibleCategories.remove(i);
+								i--;
+							}
 						}
-						catch (SQLException ex)
+						if (possibleCategories.size() != 0)
 						{
-							event.getChannel().block().createMessage("Sorry " + event.getUser().block().asMember(event.getGuild().block().getId()).block().getDisplayName() + ", the server encountered an error while processing your request.\n" + ex.getMessage()).subscribe();
+							String category = possibleCategories.get((int)(Math.random()*possibleCategories.size()));
+							ArrayList<String> correctOptns = cardInfo.get(cardn).get(category);
+							String correctOptn = correctOptns.get((int)(Math.random()*correctOptns.size()));
+							String[] opts = new String[dungeonNumOptions];
+							int correctIndex = (int)(Math.random()*opts.length);
+							opts[correctIndex] = correctOptn;
+							ArrayList<String> possibleChoices = dgopts.get(category);
+							for (int i = 0; i < correctOptns.size(); i++)
+								possibleChoices.remove(correctOptns.get(i));
+							if (possibleChoices.size()+1 < dungeonNumOptions)
+								continue;
+							Collections.shuffle(possibleChoices);
+							for (int i = 0; i < opts.length; i++)
+							{
+								if (i == correctIndex)
+									continue;
+								opts[i] = possibleChoices.get(0);
+								possibleChoices.remove(0);
+							}
+							
+							channel.createEmbed(spec -> {
+								var temp = spec.setColor(Color.RED)
+								// .setAuthor("setAuthor", "https://drops.0k.rip", "https://drops.0k.rip/img/botprofile.png")
+								.setThumbnail(message.getAuthor().orElseThrow(null).getAvatarUrl())
+								.setTitle("Dungeon for " + message.getAuthor().orElseThrow(null).asMember(channel.getGuild().block().getId()).block().getDisplayName() + ":")
+								.setDescription(getCardDisplayName(cardn) + " - " + (dgCatMap.get(category)==null?category:dgCatMap.get(category)));
+								for (int i = 0; i < opts.length; i++)
+								{
+									temp = temp.addField(new String(new byte[]{(byte)(0x31+i),(byte)-17,(byte)-72,(byte)-113,(byte)-30,(byte)-125,(byte)-93}), opts[i], true);
+								}
+								temp.setImage("https://drops.0k.rip/card/" + cardn)
+								.setFooter("drops?", "https://drops.0k.rip/img/botprofile.png")
+								.setTimestamp(Instant.now());
+							}).flatMap(msg -> {
+								String author = message.getAuthor().orElseThrow(null).getId().asString();
+								String[] optssend = new String[opts.length+1];
+								optssend[0] = ((Message)msg).getId().asString();
+								System.arraycopy(Arrays.stream(opts).map(o -> o.equals(correctOptn)?cardn:null).toArray(String[]::new), 0, optssend, 1, optssend.length-1);
+								dgWaiting.put(author, optssend);
+								var temp = msg.addReaction(ReactionEmoji.unicode(new String(new byte[]{(byte)(0x31),(byte)-17,(byte)-72,(byte)-113,(byte)-30,(byte)-125,(byte)-93})));
+								for (int i = 1; i < opts.length; i++)
+									temp = temp.then(msg.addReaction(ReactionEmoji.unicode(new String(new byte[]{(byte)(0x31+i),(byte)-17,(byte)-72,(byte)-113,(byte)-30,(byte)-125,(byte)-93}))));
+								return temp;
+							}).subscribe();
+							
+							return;
 						}
-						renderedImage.remove(riOwner.get(author));
-						riOwner.remove(author);
 					}
 				}
-				else if (dgWaiting.get(author) != null && dgWaiting.get(author)[0].equals(event.getMessageId().asString()))
+				if ("~cd".replaceAll("\\~", botPrefix).equalsIgnoreCase(message.getContent().split(" ")[0].trim()))
 				{
-					String raw = event.getEmoji().asUnicodeEmoji().orElseThrow().getRaw();
-					byte[] b = raw.getBytes();
-					if (b.length == 7 && b[1] == (byte)-17 && b[2] == (byte)-72 && b[3] == (byte)-113 && b[4] == (byte)-30 && b[5] == (byte)-125 && b[6] == (byte)-93)
+					final GuildMessageChannel channel = (GuildMessageChannel)message.getChannel().block();
+					String authoru = message.getAuthor().orElseThrow().asMember(channel.getGuild().block().getId()).block().getDisplayName();
+					String author = message.getAuthor().orElseThrow().getId().asString();
+					long dropCd = dropTime.get(author) == null ? 0 : dropCooldownMillis - (System.currentTimeMillis()-dropTime.get(author));
+					long dungeonCd = dgTime.get(author) == null ? 0 : dungeonCooldownMillis - (System.currentTimeMillis()-dgTime.get(author));
+					channel.createEmbed(spec ->
+								spec.setTitle("Cooldowns")
+									.setDescription("for " + authoru)
+									.setThumbnail(message.getAuthor().orElseThrow(null).getAvatarUrl())
+									.addField("Drop", (dropCd <= 0 ? "[READY]" : formatDuration(dropCd)), false)
+									.addField("Dungeon", (dungeonCd <= 0 ? "[READY]" : formatDuration(dungeonCd)), true)
+									.setFooter("drops?", "https://drops.0k.rip/img/botprofile.png")
+									.setTimestamp(Instant.now())
+					).subscribe();
+				}
+			});
+			
+			gateway.getEventDispatcher().on(ReactionAddEvent.class).subscribe(
+				event -> {
+					try
 					{
-						String cardInfo = dgWaiting.get(author)[raw.charAt(0)-0x31+1];
-						dgWaiting.remove(author);
-						if (cardInfo != null)
+						event.getEmoji().asUnicodeEmoji().orElseThrow();
+					}
+					catch (Exception ex)
+					{
+						return;
+					}
+					System.out.println("Found new reaction: " + event.getEmoji().asUnicodeEmoji().orElseThrow().getRaw() + " by " + event.getUserId() + " on " + event.getMessageId().asString());
+					String author = event.getUserId().asString();
+					String[] waitinfo = dropWaiting.get(author);
+					System.out.println("Found waitinfo " + waitinfo);
+					if (waitinfo != null && waitinfo[0].equals(event.getMessageId().asString()))
+					{
+						System.out.println("User and message ids match! Now check if the emoji matches...");
+						String raw = event.getEmoji().asUnicodeEmoji().orElseThrow().getRaw();
+						if (inventory.get(author) == null)
+							inventory.put(author, new ArrayList<String>());
+						String cardinfo = null;
+						byte[] b = raw.getBytes();
+						System.out.println(Arrays.toString(b));
+						if (b.length == 7 && b[1] == (byte)-17 && b[2] == (byte)-72 && b[3] == (byte)-113 && b[4] == (byte)-30 && b[5] == (byte)-125 && b[6] == (byte)-93)
 						{
+							System.out.println("ROUGHLY OK");
+							cardinfo = waitinfo[1].split("\\+")[raw.charAt(0)-0x31];
+						}
+						if (cardinfo != null)
+						{
+							String[] cardparts = cardinfo.split(""+(char)4);
 							try
 							{
-								String[] cardparts = genCard(cardInfo);
 								statement.execute("INSERT INTO cardInstance(rawName, id, level, stars, owner) VALUES ('" + cardparts[0] + "', '" + cardparts[1] + "', '" + cardparts[3] + "', '" + cardparts[2] + "', '" + author + "')");
+								dropChannel.get(author).createMessage("Enjoy your new " + cardparts[2] + " star " + getCardDisplayName(cardparts[0]) + " (level " + cardparts[3] + ")").subscribe();
+								dropWaiting.remove(author);
 								if (inventory.get(author) == null)
 									inventory.put(author, new ArrayList<String>());
-								cardInfo = cardparts[0] + ((char)4) + cardparts[1] + ((char)4) + cardparts[2] + ((char)4) + cardparts[3];
-								inventory.get(author).add(cardInfo);
+								inventory.get(author).add(cardinfo);
 								idLookup.put(cardparts[1], true);
 								// saveMap(inventory, "/www/drops.0k.rip/inventory.dropdata");
-								event.getChannel().block().createMessage("Enjoy your new " + cardparts[2] + " star " + getCardDisplayName(cardparts[0]) + " (level " + cardparts[3] + ")").subscribe();
 							}
 							catch (SQLException ex)
 							{
 								event.getChannel().block().createMessage("Sorry " + event.getUser().block().asMember(event.getGuild().block().getId()).block().getDisplayName() + ", the server encountered an error while processing your request.\n" + ex.getMessage()).subscribe();
 							}
+							renderedImage.remove(riOwner.get(author));
+							riOwner.remove(author);
 						}
-						else
+					}
+					else if (dgWaiting.get(author) != null && dgWaiting.get(author)[0].equals(event.getMessageId().asString()))
+					{
+						String raw = event.getEmoji().asUnicodeEmoji().orElseThrow().getRaw();
+						byte[] b = raw.getBytes();
+						if (b.length == 7 && b[1] == (byte)-17 && b[2] == (byte)-72 && b[3] == (byte)-113 && b[4] == (byte)-30 && b[5] == (byte)-125 && b[6] == (byte)-93)
 						{
-							event.getChannel().block().createMessage("Sorry " + event.getUser().block().asMember(event.getGuild().block().getId()).block().getDisplayName() + ", that was wrong.\nBetter luck next time <3").subscribe();
+							String cardInfo = dgWaiting.get(author)[raw.charAt(0)-0x31+1];
+							dgWaiting.remove(author);
+							if (cardInfo != null)
+							{
+								try
+								{
+									String[] cardparts = genCard(cardInfo);
+									statement.execute("INSERT INTO cardInstance(rawName, id, level, stars, owner) VALUES ('" + cardparts[0] + "', '" + cardparts[1] + "', '" + cardparts[3] + "', '" + cardparts[2] + "', '" + author + "')");
+									if (inventory.get(author) == null)
+										inventory.put(author, new ArrayList<String>());
+									cardInfo = cardparts[0] + ((char)4) + cardparts[1] + ((char)4) + cardparts[2] + ((char)4) + cardparts[3];
+									inventory.get(author).add(cardInfo);
+									idLookup.put(cardparts[1], true);
+									// saveMap(inventory, "/www/drops.0k.rip/inventory.dropdata");
+									event.getChannel().block().createMessage("Enjoy your new " + cardparts[2] + " star " + getCardDisplayName(cardparts[0]) + " (level " + cardparts[3] + ")").subscribe();
+								}
+								catch (SQLException ex)
+								{
+									event.getChannel().block().createMessage("Sorry " + event.getUser().block().asMember(event.getGuild().block().getId()).block().getDisplayName() + ", the server encountered an error while processing your request.\n" + ex.getMessage()).subscribe();
+								}
+							}
+							else
+							{
+								event.getChannel().block().createMessage("Sorry " + event.getUser().block().asMember(event.getGuild().block().getId()).block().getDisplayName() + ", that was wrong.\nBetter luck next time <3").subscribe();
+							}
 						}
 					}
 				}
-			}
-		);
+			);
+			System.out.println("The Discord bot should be up and running!");
+			gateway.onDisconnect().block();
+		}
+		catch (Exception ex)
+		{
+			System.out.println("Uh-oh! Unhandled exception in the Discord bot code. botToken: " + botToken);
+			ex.printStackTrace();
+			System.out.println("Note: The web-server will continue running.");
+		}
 		
-		System.out.println("Hi, server *should* be up and running!");
-		gateway.onDisconnect().block();
 	}
 	// public static void saveMap(Map<String,ArrayList<String>> map, String fileName)
 	// {
