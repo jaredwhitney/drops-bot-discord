@@ -57,7 +57,7 @@ public final class ExampleBot
 		statement.execute("CREATE TABLE IF NOT EXISTS settings (dropNumCards int NOT NULL, dropCooldownMillis int NOT NULL, dungeonOptions int NOT NULL, dungeonCooldownMillis int NOT NULL, serverPort int NOT NULL, botPrefix string NOT NULL, siteUrl string NOT NULL, cardsFolder string NOT NULL, authHandler string NOT NULL)");
 		if (statement.executeQuery("SELECT COUNT(*) as count FROM settings").getInt("count") == 0)
 		{
-			statement.execute("INSERT INTO settings (dropNumCards, dropCooldownMillis, dungeonOptions, dungeonCooldownMillis, serverPort, botPrefix, siteUrl, cardsFolder) VALUES (3, 600000, 4, 600000, 28002, ',', 'drops.0k.rip', '/www/drops.0k.rip/card/', 'auth.aws1.0k.rip')");
+			statement.execute("INSERT INTO settings (dropNumCards, dropCooldownMillis, dungeonOptions, dungeonCooldownMillis, serverPort, botPrefix, siteUrl, cardsFolder, authHandler) VALUES (3, 600000, 4, 600000, 28002, ',', 'drops.0k.rip', '/www/drops.0k.rip/card/', 'auth.aws1.0k.rip')");
 		}
 		
 		ResultSet settingsRS = statement.executeQuery("SELECT TOP 1 * FROM settings");
