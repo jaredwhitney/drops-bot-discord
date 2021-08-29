@@ -1,0 +1,30 @@
+plugins {
+    id 'java-library'
+    id 'application'
+}
+
+repositories {
+  mavenCentral();
+  jcenter();
+}
+
+dependencies {
+  implementation 'com.discord4j:discord4j-core:3.1.7'
+  implementation files("../../Java/SHARED/shaded-jar/Http_SHADED.jar")
+  implementation files("../../Java/SHARED/shaded-jar/Utils_SHADED.jar")
+  implementation 'org.sejda.imageio:webp-imageio:0.1.6'
+  implementation 'org.xerial:sqlite-jdbc:3.36.0.2'
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'ExampleBot'
+    }
+}
+
+mainClassName = 'ExampleBot'
+
+run {
+	args = ["ODc2Mjg3MjE5NTcxMjM2OTE0.YRh4EQ.TLAE-Qf_pSOiJ8a0eFq0pUDYtL4"]
+}
+
