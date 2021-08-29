@@ -52,7 +52,7 @@ public final class ExampleBot
 		statement.execute("CREATE TABLE IF NOT EXISTS cardDefinition (imageFilename string UNIQUE, displayName string, displayDescription string, packName string NOT NULL, FOREIGN KEY (packName) REFERENCES cardPack(packName), PRIMARY KEY (imageFilename))");
 		statement.execute("CREATE TABLE IF NOT EXISTS cardInstance (rawName string NOT NULL, id string UNIQUE, level integer NOT NULL, stars integer NOT NULL, owner string, FOREIGN KEY (rawName) REFERENCES cardDefinition(imageFilename), FOREIGN KEY (owner) REFERENCES user(userid), PRIMARY KEY (id))");
 		statement.execute("CREATE TABLE IF NOT EXISTS cardInfoField (keyName string UNIQUE, questionFormat string NOT NULL, PRIMARY KEY (keyName))");
-		statement.execute("CREATE TABLE IF NOT EXISTS cardInfoEntry (id integer UNIQUE AUTOINCREMENT, card string NOT NULL, field string NOT NULL, value string NOT NULL, FOREIGN KEY (card) REFERENCES cardDefinition(imageFilename), FOREIGN KEY (field) REFERENCES cardInfoField(keyName), PRIMARY KEY (id))");
+		statement.execute("CREATE TABLE IF NOT EXISTS cardInfoEntry (id integer PRIMARY KEY AUTOINCREMENT, card string NOT NULL, field string NOT NULL, value string NOT NULL, FOREIGN KEY (card) REFERENCES cardDefinition(imageFilename), FOREIGN KEY (field) REFERENCES cardInfoField(keyName))");
 		
 		statement.execute("CREATE TABLE IF NOT EXISTS settings (dropNumCards int NOT NULL, dropCooldownMillis int NOT NULL, dungeonOptions int NOT NULL, dungeonCooldownMillis int NOT NULL, serverPort int NOT NULL, botPrefix string NOT NULL, siteUrl string NOT NULL, cardsFolder string NOT NULL, authHandler string NOT NULL)");
 		if (statement.executeQuery("SELECT COUNT(*) as count FROM settings").getInt("count") == 0)
