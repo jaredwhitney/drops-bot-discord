@@ -488,7 +488,7 @@ public final class ExampleBot
 			{
 				try
 				{
-					statement.execute("UPDATE settings SET " +
+					statement.execute("UPDATE settings SET "
 						+ "dropNumCards = " + Integer.parseInt(new String(req.getMultipart("dropNumCards")[0].filedata, java.nio.charset.StandardCharsets.UTF_8)) + ","
 						+ "dropCooldownMillis = " + Integer.parseInt(new String(req.getMultipart("dropCooldownMillis")[0].filedata, java.nio.charset.StandardCharsets.UTF_8)) + ","
 						+ "dungeonOptions = " + Integer.parseInt(new String(req.getMultipart("dungeonOptions")[0].filedata, java.nio.charset.StandardCharsets.UTF_8)) + ","
