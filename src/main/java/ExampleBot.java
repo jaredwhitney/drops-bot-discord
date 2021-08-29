@@ -63,6 +63,7 @@ public final class ExampleBot
 		ResultSet settingsRS = statement.executeQuery("SELECT * FROM settings LIMIT 1");
 		settingsRS.next();
 		String botPrefix = settingsRS.getString("botPrefix");
+		String authHandlerUrl = settingsRS.getString("authHandler");
 		
 		HttpServer server = new HttpServer(settingsRS.getInt("serverPort"));
 		final String token = args[0];
@@ -349,7 +350,7 @@ public final class ExampleBot
 			}
 		});
 		
-		AuthHandler auth = new AuthHandler(settingsRS.getString("authHandler"));
+		AuthHandler auth = new AuthHandler(authHandlerUrl);
 		auth.registerCallbackEndpoint("/auth/callback");
 		server.accept((req) -> {
 			if (auth.handle(req, "drops-admin"))
