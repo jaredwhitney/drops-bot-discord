@@ -488,17 +488,16 @@ public final class ExampleBot
 			{
 				try
 				{
-					statement.execute("UPDATE settings SET (dropNumCards, dropCooldownMillis, dungeonOptions, dungeonCooldownMillis, serverPort, botPrefix, siteUrl, authHandler, cardsFolder) = VALUES ("
-						+ Integer.parseInt(new String(req.getMultipart("dropNumCards")[0].filedata, java.nio.charset.StandardCharsets.UTF_8)) + ","
-						+ Integer.parseInt(new String(req.getMultipart("dropCooldownMillis")[0].filedata, java.nio.charset.StandardCharsets.UTF_8)) + ","
-						+ Integer.parseInt(new String(req.getMultipart("dungeonOptions")[0].filedata, java.nio.charset.StandardCharsets.UTF_8)) + ","
-						+ Integer.parseInt(new String(req.getMultipart("dungeonCooldownMillis")[0].filedata, java.nio.charset.StandardCharsets.UTF_8)) + ","
-						+ Integer.parseInt(new String(req.getMultipart("serverPort")[0].filedata, java.nio.charset.StandardCharsets.UTF_8)) + ","
-						+ "'" + new String(req.getMultipart("botPrefix")[0].filedata, java.nio.charset.StandardCharsets.UTF_8) + "',"
-						+ "'" + new String(req.getMultipart("siteUrl")[0].filedata, java.nio.charset.StandardCharsets.UTF_8) + "',"
-						+ "'" + new String(req.getMultipart("authHandler")[0].filedata, java.nio.charset.StandardCharsets.UTF_8) + "',"
-						+ "'" + new String(req.getMultipart("cardsFolder")[0].filedata, java.nio.charset.StandardCharsets.UTF_8) + "'"
-						+ ")"
+					statement.execute("UPDATE settings SET " +
+						+ "dropNumCards = " + Integer.parseInt(new String(req.getMultipart("dropNumCards")[0].filedata, java.nio.charset.StandardCharsets.UTF_8)) + ","
+						+ "dropCooldownMillis = " + Integer.parseInt(new String(req.getMultipart("dropCooldownMillis")[0].filedata, java.nio.charset.StandardCharsets.UTF_8)) + ","
+						+ "dungeonOptions = " + Integer.parseInt(new String(req.getMultipart("dungeonOptions")[0].filedata, java.nio.charset.StandardCharsets.UTF_8)) + ","
+						+ "dungeonCooldownMillis = " + Integer.parseInt(new String(req.getMultipart("dungeonCooldownMillis")[0].filedata, java.nio.charset.StandardCharsets.UTF_8)) + ","
+						+ "serverPort = " + Integer.parseInt(new String(req.getMultipart("serverPort")[0].filedata, java.nio.charset.StandardCharsets.UTF_8)) + ","
+						+ "botPrefix = '" + new String(req.getMultipart("botPrefix")[0].filedata, java.nio.charset.StandardCharsets.UTF_8) + "',"
+						+ "siteUrl = '" + new String(req.getMultipart("siteUrl")[0].filedata, java.nio.charset.StandardCharsets.UTF_8) + "',"
+						+ "authHandler = '" + new String(req.getMultipart("authHandler")[0].filedata, java.nio.charset.StandardCharsets.UTF_8) + "',"
+						+ "cardsFolder = '" + new String(req.getMultipart("cardsFolder")[0].filedata, java.nio.charset.StandardCharsets.UTF_8) + "'"
 					);
 					req.respondWithHeaders1(
 						HttpStatus.TEMPORARY_REDIRECT_302,
