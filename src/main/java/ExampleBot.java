@@ -12,6 +12,8 @@ import java.io.*;
 import java.nio.*;
 import javax.imageio.*;
 import java.awt.image.*;
+import java.sql.*;
+
 public final class ExampleBot
 {
 	public static final int DROP_CARDS = 3;
@@ -20,113 +22,149 @@ public final class ExampleBot
 	public static final int DG_OPTS = 3;
 	public static final int DG_COOLDOWN_MS = 10 * TimeConstants.MILLISECONDS_PER_MINUTE;
 	
-	public static final String DATABASE_LOCATION = "./dropdatabase.db";
+	public static final String DATABASE_LOCATION = "/www/drops.0k.rip/dropdatabase.db";
 	
-	public static final HashMap<String,String> dgCatMap = new HashMap<String,String>();
-	static
-	{
-		dgCatMap.put("dg_first_appearance_tv", "First appearance on the show");
-		dgCatMap.put("dg_first_appearance_game", "First appearance in the game");
-		dgCatMap.put("dg_first_appearance_date", "First appearance (date)");
-		dgCatMap.put("dg_unlock_cost_be", "Champion Blue Essence cost");
-		dgCatMap.put("dg_ability_passive_name", "Passive ability");
-		dgCatMap.put("dg_ability_q_name", "Q ability");
-		dgCatMap.put("dg_ability_w_name", "W ability");
-		dgCatMap.put("dg_ability_e_name", "E ability");
-		dgCatMap.put("dg_ability_c_name", "c ability");
-		dgCatMap.put("dg_ability_ult_name", "Ultimate ability");
-		dgCatMap.put("dg_ability_shift_name", "SHIFT ability");
-		dgCatMap.put("dg_real_name", "Real name");
-		dgCatMap.put("dg_hero_power", "Hero power");
-		dgCatMap.put("dg_age", "Age");
-		dgCatMap.put("dg_origin_country", "Country of origin");
-		dgCatMap.put("dg_category", "Category");
-		dgCatMap.put("dg_affiliation", "Affiliated with");
-		dgCatMap.put("dg_species", "Species");
-	}
-	
-	public static Map<String,String> riOwner = new HashMap<String,String>();
-	public static Map<String,String[]> dropWaiting = new HashMap<String,String[]>();
-	public static Map<String,MessageChannel> dropChannel = new HashMap<String,MessageChannel>();
+	// populated from SQL database
+	public static Map<String,HashMap<String,ArrayList<String>>> cardInfo = new HashMap<String,HashMap<String,ArrayList<String>>>();
+	public static Map<String,ArrayList<String>> cardPacks = new HashMap<String,ArrayList<String>>();
 	public static Map<String,ArrayList<String>> inventory = new HashMap<String,ArrayList<String>>();
 	public static Map<String,Boolean> idLookup = new HashMap<String,Boolean>();
 	public static Map<String,Long> dropTime = new HashMap<String,Long>();
 	public static Map<String,Long> dgTime = new HashMap<String,Long>();
-	public static Map<String,byte[]> renderedImage = new HashMap<String,byte[]>();
-	public static Map<String,HashMap<String,String[]>> cardInfo = new HashMap<String,HashMap<String,String[]>>();
 	public static Map<String,ArrayList<String>> dgopts = new HashMap<String,ArrayList<String>>();
+	public static final HashMap<String,String> dgCatMap = new HashMap<String,String>();
+	
+	// need no population from SQL database
+	public static Map<String,MessageChannel> dropChannel = new HashMap<String,MessageChannel>();
 	public static Map<String,String[]> dgWaiting = new HashMap<String,String[]>();
+	public static Map<String,String[]> dropWaiting = new HashMap<String,String[]>();
+	public static Map<String,byte[]> renderedImage = new HashMap<String,byte[]>();
+	public static Map<String,String> riOwner = new HashMap<String,String>();
 	public static final Random rand = new Random();
-	public static void main(final String[] args)
+	
+	public static void main(final String[] args) throws SQLException
 	{
 		
-		// Connection connection = DriverManager.getConnection("jdbc:sqlite:" + DATABASE_LOCATION);
-		// Statement statement = connection.createStatement();
-		// statement.execute("CREATE TABLE IF NOT EXISTS cards (rawName string, id string UNIQUE, level integer, stars integer, owner string)");
-		// statement.execute("CREATE TABLE IF NOT EXISTS inventories (id integer autoincrement, ");
+		final Connection connection = DriverManager.getConnection("jdbc:sqlite:" + DATABASE_LOCATION);
+		final Statement statement = connection.createStatement();
+		statement.execute("CREATE TABLE IF NOT EXISTS user (userid string UNIQUE, lastDropTime long NOT NULL, lastDungeonTime long NOT NULL, PRIMARY KEY (userid))");
+		statement.execute("CREATE TABLE IF NOT EXISTS cardPack (packName string)");
+		statement.execute("CREATE TABLE IF NOT EXISTS cardDefinition (imageFilename string UNIQUE, displayName string, displayDescription string, packName string NOT NULL, FOREIGN KEY (packName) REFERENCES cardPack(packName), PRIMARY KEY (imageFilename))");
+		statement.execute("CREATE TABLE IF NOT EXISTS cardInstance (rawName string NOT NULL, id string UNIQUE, level integer NOT NULL, stars integer NOT NULL, owner string, FOREIGN KEY (rawName) REFERENCES cardDefinition(imageFilename), FOREIGN KEY (owner) REFERENCES user(userid), PRIMARY KEY (id))");
+		statement.execute("CREATE TABLE IF NOT EXISTS cardInfoField (keyName string UNIQUE, questionFormat string NOT NULL, PRIMARY KEY (keyName))");
+		statement.execute("CREATE TABLE IF NOT EXISTS cardInfoEntry (id integer UNIQUE AUTOINCREMENT, card string NOT NULL, field string NOT NULL, value string NOT NULL, FOREIGN KEY (card) REFERENCES cardDefinition(imageFilename), FOREIGN KEY (field) REFERENCES cardInfoField(keyName), PRIMARY KEY (id))");
 		
-		HttpServer server = new HttpServer(28002);
+		statement.execute("CREATE TABLE IF NOT EXISTS settings (dropNumCards int NOT NULL, dropCooldownMillis int NOT NULL, dungeonOptions int NOT NULL, dungeonCooldownMillis int NOT NULL, serverPort int NOT NULL, botPrefix string NOT NULL, siteUrl string NOT NULL, cardsFolder string NOT NULL, authHandler string NOT NULL)");
+		if (statement.executeQuery("SELECT COUNT(*) as count FROM settings").getInt("count") == 0)
+		{
+			statement.execute("INSERT INTO settings (dropNumCards, dropCooldownMillis, dungeonOptions, dungeonCooldownMillis, serverPort, botPrefix, siteUrl, cardsFolder) VALUES (3, 600000, 4, 600000, 28002, ',', 'drops.0k.rip', '/www/drops.0k.rip/card/', 'auth.aws1.0k.rip')");
+		}
+		
+		ResultSet settingsRS = statement.executeQuery("SELECT TOP 1 * FROM settings");
+		settingsRS.next();
+		String botPrefix = settingsRS.getString("botPrefix");
+		
+		HttpServer server = new HttpServer(settingsRS.getInt("serverPort"));
 		final String token = args[0];
 		final DiscordClient client = DiscordClient.create(token);
 		final GatewayDiscordClient gateway = client.login().block();
 		
-		final File[] cards = new File("/www/drops.0k.rip/card/").listFiles();
-		
-		inventory = loadMap("/www/drops.0k.rip/inventory.dropdata");
-		for (ArrayList<String> cardlist : inventory.values())
-			for (String card : cardlist)
-				idLookup.put(card.split(""+(char)4)[1],true);
-		
-		for (File cardF : cards)
+		ResultSet cardPackRS = statement.executeQuery("SELECT * from cardPack");
+		while (cardPackRS.next())
 		{
-			String name = cardF.getName().split("\\.")[0];
-			try
-			{
-				String[] inflines = SysUtils.readTextFile(new File("/www/drops.0k.rip/cardinfo/" + name + ".txt"), java.nio.charset.StandardCharsets.UTF_8).split("\\n");
-				HashMap<String,String[]> map = new HashMap<String,String[]>();
-				cardInfo.put(cardF.getName(), map);
-				for (String line : inflines)
-				{
-					map.put(line.split("\\=")[0].trim(),line.split("\\=")[1].trim().split("\\,"));
-					if (line.startsWith("dg_"))
-					{
-						ArrayList<String> dglist = dgopts.get(line.split("\\=")[0].trim());
-						if (dglist == null)
-						{
-							dglist = new ArrayList<String>();
-							String opt = line.split("\\=")[0].trim();
-							dgopts.put(opt, dglist);
-						}
-						String[] vals = line.split("\\=")[1].trim().split("\\,");
-						for (String val : vals)
-						{
-							val = val.trim();
-							boolean found = false;
-							for (String s : dglist)
-								if (s.equalsIgnoreCase(val))
-								{
-									found = true;
-									break;
-								}
-							if (!found)
-								dglist.add(val);
-						}
-					}
-				}
-				System.out.println("Read cardinfo for " + name);
-			}
-			catch (Exception ex){
-			}
+			String packName = cardPackRS.getString("packName");
+			cardPacks.put(packName, new ArrayList<String>());
+			System.out.println("Loaded info for cardpack " + packName);
 		}
+		
+		ResultSet cardDefinitionRS = statement.executeQuery("SELECT * FROM cardDefinition");
+		while (cardDefinitionRS.next())
+		{
+			String cardID = cardDefinitionRS.getString("imageFilename");
+			HashMap<String,ArrayList<String>> inf = new HashMap<String,ArrayList<String>>();
+			cardInfo.put(cardID, inf);
+			String displayName = cardDefinitionRS.getString("displayName");
+			if (displayName != null)
+			{
+				ArrayList<String> dnAL = new ArrayList<String>();
+				dnAL.add(displayName);
+				inf.put("display_name", dnAL);
+			}
+			String displayDescription = cardDefinitionRS.getString("displayDescription");
+			if (displayDescription != null)
+			{
+				ArrayList<String> dnDSC = new ArrayList<String>();
+				dnDSC.add(displayDescription);
+				inf.put("display_description", dnDSC);
+			}
+			String packName = cardDefinitionRS.getString("packName");
+			ArrayList<String> dnCAT = new ArrayList<String>();
+			dnCAT.add(packName);
+			inf.put("category", dnCAT);
+			cardPacks.get(packName).add(cardID);
+			
+			ResultSet cardInfoRS = statement.executeQuery("SELECT * FROM cardInfoEntry WHERE card = '" + cardID  + "'");
+			while (cardInfoRS.next())
+			{
+				String field = cardInfoRS.getString("field");
+				if (inf.get(field) == null)
+					inf.put(field, new ArrayList<String>());
+				inf.get(field).add(cardInfoRS.getString("value"));
+			}
+			
+			System.out.println("Loaded definition for card " + getCardDisplayName(cardID));
+		}
+		final String cards[] = cardInfo.keySet().toArray(String[]::new);
+		
+		ResultSet cardInstanceRS = statement.executeQuery("SELECT * FROM cardInstance");
+		while (cardInstanceRS.next())
+		{
+			String owner = cardInstanceRS.getString("owner");
+			if (inventory.get(owner) == null)
+				inventory.put(owner, new ArrayList<String>());
+			inventory.get(owner).add(cardInstanceRS.getString("rawName") + ((char)4) + cardInstanceRS.getString("id") + ((char)4) + cardInstanceRS.getString("stars") + ((char)4) + cardInstanceRS.getString("level"));
+			idLookup.put(cardInstanceRS.getString("id"), true);
+		}
+		System.out.println("Loaded card instance info for " + idLookup.keySet().size() + " cards");
+		
+		ResultSet userRS = statement.executeQuery("SELECT * FROM user");
+		int userNum = 0;
+		while (userRS.next())
+		{
+			userNum++;
+			String userID = userRS.getString("userid");
+			long dropT = userRS.getLong("lastDropTime");
+			dropTime.put(userID, dropT>0?dropT:null);
+			long dgT = userRS.getLong("lastDungeonTime");
+			dgTime.put(userID, dgT>0?dgT:null);
+		}
+		System.out.println("Loaded user info for " + userNum + " users");
+		
+		ResultSet cardInfoFieldRS = statement.executeQuery("SELECT keyName, questionFormat FROM cardInfoField");
+		int cieNum = 0, cioNum = 0;
+		while (cardInfoFieldRS.next())
+		{
+			String field = cardInfoFieldRS.getString("keyName");
+			dgCatMap.put(field, cardInfoFieldRS.getString("questionFormat"));
+			ResultSet cardInfoRS = statement.executeQuery("SELECT * FROM cardInfoEntry WHERE field = '" + field + "'");
+			dgopts.put(field, new ArrayList<String>());
+			while (cardInfoRS.next())
+			{
+				dgopts.get(field).add(cardInfoRS.getString("value"));
+				cieNum++;
+			}
+			cioNum++;
+		}
+		System.out.println("Loaded dungeon info: " + cieNum + " entries in " + cioNum + " fields");
 		
 		gateway.on(MessageCreateEvent.class).subscribe(event -> {
 			final Message message = event.getMessage();
-			if (",help".equalsIgnoreCase(message.getContent().split(" ")[0].trim()))
+			if ("~help".replaceAll("\\~", botPrefix).equalsIgnoreCase(message.getContent().split(" ")[0].trim()))
 			{
 				final GuildMessageChannel channel = (GuildMessageChannel)message.getChannel().block();
-				channel.createMessage("Commands:\n  ,drop\n  ,inv\n  ,view [id]\n  ,dg\n  ,cd\n  ,help").block();
+				channel.createMessage("Commands:\n  ~drop\n  ~inv\n  ~view [id]\n  ~dg\n  ~cd\n  ~help".replaceAll("\\~", botPrefix)).block();
 			}
-			if (",drop".equalsIgnoreCase(message.getContent().split(" ")[0].trim()))
+			if ("~drop".replaceAll("\\~", botPrefix).equalsIgnoreCase(message.getContent().split(" ")[0].trim()))
 			{
 				final GuildMessageChannel channel = (GuildMessageChannel)message.getChannel().block();
 				Long userLastDrop = dropTime.get(message.getAuthor().orElseThrow(null).getId().asString());
@@ -139,7 +177,7 @@ public final class ExampleBot
 				String cardStr = "", cardStrS = "";
 				for (int i = 0; i < DROP_CARDS; i++)
 				{
-					String cardn = cards[(int)(Math.random()*cards.length)].getName();
+					String cardn = cards[(int)(Math.random()*cards.length)];
 					String[] cardInf = genCard(cardn);
 					cardStr += (i>0?"+":"")+cardInf[0] + ((char)4) + cardInf[1] + ((char)4) + cardInf[2] + ((char)4) + cardInf[3];
 					cardStrS += (i>0?"+":"")+cardn;
@@ -176,7 +214,7 @@ public final class ExampleBot
 				return temp;
 				}).subscribe();
 			}
-			if (",inv".equalsIgnoreCase(message.getContent().split(" ")[0].trim()))
+			if ("~inv".replaceAll("\\~", botPrefix).equalsIgnoreCase(message.getContent().split(" ")[0].trim()))
 			{
 				final GuildMessageChannel channel = (GuildMessageChannel)message.getChannel().block();
 				String authoru = message.getAuthor().orElseThrow().asMember(channel.getGuild().block().getId()).block().getDisplayName();
@@ -192,7 +230,7 @@ public final class ExampleBot
 				}
 				channel.createMessage(authoru + "'s Inventory:\n" + cardsStr).block();
 			}
-			if (",view".equalsIgnoreCase(message.getContent().split(" ")[0].trim()))
+			if ("~view".replaceAll("\\~", botPrefix).equalsIgnoreCase(message.getContent().split(" ")[0].trim()))
 			{
 				final GuildMessageChannel channel = (GuildMessageChannel)message.getChannel().block();
 				String id = message.getContent().split(" ")[1].trim();
@@ -218,7 +256,7 @@ public final class ExampleBot
 				channel.createMessage("Sorry " + message.getAuthor().orElseThrow().asMember(channel.getGuild().block().getId()).block().getDisplayName() +", I couldn't find card \"" + id + "\" :(").subscribe();
 				return;
 			}
-			if (",dg".equalsIgnoreCase(message.getContent().split(" ")[0].trim()))
+			if ("~dg".replaceAll("\\~", botPrefix).equalsIgnoreCase(message.getContent().split(" ")[0].trim()))
 			{
 				final GuildMessageChannel channel = (GuildMessageChannel)message.getChannel().block();
 				Long userLastDrop = dgTime.get(message.getAuthor().orElseThrow(null).getId().asString());
@@ -230,7 +268,7 @@ public final class ExampleBot
 				dgTime.put(message.getAuthor().orElseThrow(null).getId().asString(), System.currentTimeMillis());
 				while (true)
 				{
-					String cardn = cards[(int)(Math.random()*cards.length)].getName();
+					String cardn = cards[(int)(Math.random()*cards.length)];
 					List<String> dglist = new ArrayList<String>(dgopts.keySet());
 					ArrayList<String> possibleCategories = getCardDungeonCategories(cardn);
 					for (int i = 0; i < possibleCategories.size(); i++)
@@ -244,14 +282,14 @@ public final class ExampleBot
 					if (possibleCategories.size() != 0)
 					{
 						String category = possibleCategories.get((int)(Math.random()*possibleCategories.size()));
-						String[] correctOptns = cardInfo.get(cardn).get(category);
-						String correctOptn = correctOptns[(int)(Math.random()*correctOptns.length)];
+						ArrayList<String> correctOptns = cardInfo.get(cardn).get(category);
+						String correctOptn = correctOptns.get((int)(Math.random()*correctOptns.size()));
 						String[] opts = new String[DG_OPTS];
 						int correctIndex = (int)(Math.random()*opts.length);
 						opts[correctIndex] = correctOptn;
 						ArrayList<String> possibleChoices = dgopts.get(category);
-						for (int i = 0; i < correctOptns.length; i++)
-							possibleChoices.remove(correctOptns[i]);
+						for (int i = 0; i < correctOptns.size(); i++)
+							possibleChoices.remove(correctOptns.get(i));
 						if (possibleChoices.size()+1 < DG_OPTS)
 							continue;
 						Collections.shuffle(possibleChoices);
@@ -292,7 +330,7 @@ public final class ExampleBot
 					}
 				}
 			}
-			if (",cd".equalsIgnoreCase(message.getContent().split(" ")[0].trim()))
+			if ("~cd".replaceAll("\\~", botPrefix).equalsIgnoreCase(message.getContent().split(" ")[0].trim()))
 			{
 				final GuildMessageChannel channel = (GuildMessageChannel)message.getChannel().block();
 				String authoru = message.getAuthor().orElseThrow().asMember(channel.getGuild().block().getId()).block().getDisplayName();
@@ -311,8 +349,21 @@ public final class ExampleBot
 			}
 		});
 		
-		System.out.println("Hi, server *should* be up and running, and *NOT* returning 404 under any circumstances.");
+		AuthHandler auth = new AuthHandler(settingsRS.getString("authHandler"));
+		auth.registerCallbackEndpoint("/auth/callback");
 		server.accept((req) -> {
+			if (auth.handle(req, "drops-admin"))
+				return;
+			if (req.matches(HttpVerb.GET, "/") || req.matches(HttpVerb.GET, "/index.html"))
+			{
+				req.respond("<body>"
+					+ "<a href=\"/admin/settings\">General Settings</a><br>"
+					+ "<a href=\"/admin/cardpacks\">View / edit card packs</a><br>"
+					+ "<a href=\"/admin/cards\">View / edit cards</a><br>"
+				+ "</body>");
+			}
+			if (!auth.enforceValidCredentials("drops-admin"))
+				return;
 			if (req.matches(HttpVerb.GET, "/cardpack"))
 			{
 				try
@@ -335,6 +386,80 @@ public final class ExampleBot
 					ex.printStackTrace();
 					req.respond(HttpStatus.NOT_FOUND_404);
 				}
+			}
+			else if (req.matches(HttpVerb.GET, "/admin/cardpacks"))
+			{
+				String resp = "<body>";
+				for (String pack : cardPacks.keySet())
+				{
+					resp += "<a href=\"/admin/cardpack?name=" + pack + "\">" + pack + " (" + cardPacks.get(pack).size() + " cards)</a><br>";
+				}
+				resp += "</body>";
+				req.respond(resp);
+			}
+			else if (req.matches(HttpVerb.GET, "/admin/cardpack"))
+			{
+				String pack = req.getParam("name")[0];
+				String resp = "<body>";
+				resp += "<h2>Pack cards:</h2>";
+				for (String card : cardPacks.get(pack))
+				{
+					resp += "<a href-\"/admin/card?name=" + card + "\">" + getCardDisplayName(card) + "</a><br>";
+				}
+				resp += "</body>";
+				req.respond(resp);
+			}
+			else if (req.matches(HttpVerb.GET, "/admin/cards"))
+			{
+				String resp = "<body>";
+				for (String card : cardInfo.keySet())
+				{
+					resp += "<a href=\"/admin/card?name=" + card + "\">" + getCardDisplayName(card) + "</a><br>";
+				}
+				resp += "</body>";
+				req.respond(resp);
+			}
+			else if (req.matches(HttpVerb.GET, "/admin/card"))
+			{
+				String card = req.getParam("name")[0];
+				req.respond("<body>"
+					+ "<form enctype=\"multipart/form-data\">"
+					+ "<label for=\"display_name\">Display Name</label>"
+					+ "<input id=\"display_name\" value=\"" + (cardInfo.get(card)==null?"":cardInfo.get(card)) + "\"></input><br>"
+					+ "<input type=\"hidden\" id=\"name\" value=\"" + card + "\"></input><br>"
+					+ "<input type=\"submit\"></input><br>"
+					+ "</form>"
+				+ "</body>");
+			}
+			else if (req.matches(HttpVerb.POST, "/admin/card"))
+			{
+				// TODO
+				String card = req.getParam("name")[0];
+				String displayName = new String(req.getMultipart("display_name")[0].filedata, java.nio.charset.StandardCharsets.UTF_8);
+				if (displayName.trim().length() == 0)
+					displayName = null;
+				req.respond(HttpStatus.TEMPORARY_REDIRECT_302, "Location: /admin/card?name=" + card);
+			}
+			else if (req.matches(HttpVerb.GET, "/admin/infofield"))
+			{
+				// TODO
+				req.respond(HttpStatus.NOT_FOUND_404);
+			}
+			else if (req.matches(HttpVerb.POST, "/admin/infofield"))
+			{
+				// TODO
+				req.respond(HttpStatus.NOT_FOUND_404);
+			}
+			else if (req.matches(HttpVerb.GET, "/admin/settings"))
+			{
+				// TODO
+				req.respond(HttpStatus.NOT_FOUND_404);
+			}
+			else if (req.matches(HttpVerb.POST, "/admin/settings"))
+			{
+				// TODO
+				// statement.execute("UPDATE settings SET (dropNumCards, dropCooldownMillis, dungeonOptions, dungeonCooldownMillis, serverPort, botPrefix, siteUrl, authHandler) = VALUES (" + Integer.parseInt(req.getMultipart("dropNumCards").filedata) + "," + Integer.parseInt(req.getMultipart("dropCooldownMillis").filedata) + "," +  + ",?)");
+				req.respond(HttpStatus.TEMPORARY_REDIRECT_302, "Location: /admin/settings");
 			}
 			else
 			{
@@ -370,22 +495,24 @@ public final class ExampleBot
 						System.out.println("ROUGHLY OK");
 						cardinfo = waitinfo[1].split("\\+")[raw.charAt(0)-0x31];
 					}
-					// if (raw.equals("\u0031\uFE0F\u20E3"))
-						// cardinfo = waitinfo[1].split("\\+")[0];
-					// else if (raw.equals("\u0032\uFE0F\u20E3"))
-						// cardinfo = waitinfo[1].split("\\+")[1];
-					// else if (raw.equals("\u0033\uFE0F\u20E3"))
-						// cardinfo = waitinfo[1].split("\\+")[2];
 					if (cardinfo != null)
 					{
 						String[] cardparts = cardinfo.split(""+(char)4);
-						dropChannel.get(author).createMessage("Enjoy your new " + cardparts[2] + " star " + getCardDisplayName(cardparts[0]) + " (level " + cardparts[3] + ")").subscribe();
-						dropWaiting.remove(author);
-						if (inventory.get(author) == null)
-							inventory.put(author, new ArrayList<String>());
-						inventory.get(author).add(cardinfo);
-						idLookup.put(cardparts[1], true);
-						saveMap(inventory, "/www/drops.0k.rip/inventory.dropdata");
+						try
+						{
+							statement.execute("INSERT INTO cardInstance(rawName, id, level, stars, owner) VALUES ('" + cardparts[0] + "', '" + cardparts[1] + "', '" + cardparts[3] + "', '" + cardparts[2] + "', '" + author + "')");
+							dropChannel.get(author).createMessage("Enjoy your new " + cardparts[2] + " star " + getCardDisplayName(cardparts[0]) + " (level " + cardparts[3] + ")").subscribe();
+							dropWaiting.remove(author);
+							if (inventory.get(author) == null)
+								inventory.put(author, new ArrayList<String>());
+							inventory.get(author).add(cardinfo);
+							idLookup.put(cardparts[1], true);
+							// saveMap(inventory, "/www/drops.0k.rip/inventory.dropdata");
+						}
+						catch (SQLException ex)
+						{
+							event.getChannel().block().createMessage("Sorry " + event.getUser().block().asMember(event.getGuild().block().getId()).block().getDisplayName() + ", the server encountered an error while processing your request.\n" + ex.getMessage()).subscribe();
+						}
 						renderedImage.remove(riOwner.get(author));
 						riOwner.remove(author);
 					}
@@ -400,14 +527,22 @@ public final class ExampleBot
 						dgWaiting.remove(author);
 						if (cardInfo != null)
 						{
-							String[] cardparts = genCard(cardInfo);
-							if (inventory.get(author) == null)
-								inventory.put(author, new ArrayList<String>());
-							cardInfo = cardparts[0] + ((char)4) + cardparts[1] + ((char)4) + cardparts[2] + ((char)4) + cardparts[3];
-							inventory.get(author).add(cardInfo);
-							idLookup.put(cardparts[1], true);
-							saveMap(inventory, "/www/drops.0k.rip/inventory.dropdata");
-							event.getChannel().block().createMessage("Enjoy your new " + cardparts[2] + " star " + getCardDisplayName(cardparts[0]) + " (level " + cardparts[3] + ")").subscribe();
+							try
+							{
+								String[] cardparts = genCard(cardInfo);
+								statement.execute("INSERT INTO cardInstance(rawName, id, level, stars, owner) VALUES ('" + cardparts[0] + "', '" + cardparts[1] + "', '" + cardparts[3] + "', '" + cardparts[2] + "', '" + author + "')");
+								if (inventory.get(author) == null)
+									inventory.put(author, new ArrayList<String>());
+								cardInfo = cardparts[0] + ((char)4) + cardparts[1] + ((char)4) + cardparts[2] + ((char)4) + cardparts[3];
+								inventory.get(author).add(cardInfo);
+								idLookup.put(cardparts[1], true);
+								// saveMap(inventory, "/www/drops.0k.rip/inventory.dropdata");
+								event.getChannel().block().createMessage("Enjoy your new " + cardparts[2] + " star " + getCardDisplayName(cardparts[0]) + " (level " + cardparts[3] + ")").subscribe();
+							}
+							catch (SQLException ex)
+							{
+								event.getChannel().block().createMessage("Sorry " + event.getUser().block().asMember(event.getGuild().block().getId()).block().getDisplayName() + ", the server encountered an error while processing your request.\n" + ex.getMessage()).subscribe();
+							}
 						}
 						else
 						{
@@ -417,46 +552,47 @@ public final class ExampleBot
 				}
 			}
 		);
-
+		
+		System.out.println("Hi, server *should* be up and running!");
 		gateway.onDisconnect().block();
 	}
-	public static void saveMap(Map<String,ArrayList<String>> map, String fileName)
-	{
-		String str = "";
-		for (Map.Entry<String,ArrayList<String>> e : map.entrySet())
-		{
-			str += e.getKey() + (char)2;
-			for (String s : e.getValue())
-				str += s + (char)1;
-			str += (char)0;
-		}
-		SysUtils.writeFile(new File(fileName), str, java.nio.charset.StandardCharsets.UTF_8);
-	}
-	public static Map<String,ArrayList<String>> loadMap(String fileName)
-	{
-		Map<String,ArrayList<String>> ret = new HashMap<String,ArrayList<String>>();
-		if (!new File(fileName).exists())
-			return ret;
-		String[] entryStrs = SysUtils.readTextFile(new File(fileName), java.nio.charset.StandardCharsets.UTF_8).split(""+(char)0);
-		for (int j = 0; j < entryStrs.length-1; j++)
-		{
-			System.out.println("A");
-			String entryStr = entryStrs[j];
-			ArrayList<String> list = new ArrayList<String>();
-			ret.put(entryStr.split(""+(char)2)[0], list);
-			if (entryStr.indexOf(""+(char)2)!=-1)
-			{
-				try{
-				String[] subentryStrs = entryStr.split(""+(char)2)[1].split(""+(char)1);
-				for (int i = 0; i < subentryStrs.length; i++)
-				{
-					System.out.println("B");
-					list.add(subentryStrs[i]);
-				}}catch(Exception ex){}
-			}
-		}
-		return ret;
-	}
+	// public static void saveMap(Map<String,ArrayList<String>> map, String fileName)
+	// {
+		// String str = "";
+		// for (Map.Entry<String,ArrayList<String>> e : map.entrySet())
+		// {
+			// str += e.getKey() + (char)2;
+			// for (String s : e.getValue())
+				// str += s + (char)1;
+			// str += (char)0;
+		// }
+		// SysUtils.writeFile(new File(fileName), str, java.nio.charset.StandardCharsets.UTF_8);
+	// }
+	// public static Map<String,ArrayList<String>> loadMap(String fileName)
+	// {
+		// Map<String,ArrayList<String>> ret = new HashMap<String,ArrayList<String>>();
+		// if (!new File(fileName).exists())
+			// return ret;
+		// String[] entryStrs = SysUtils.readTextFile(new File(fileName), java.nio.charset.StandardCharsets.UTF_8).split(""+(char)0);
+		// for (int j = 0; j < entryStrs.length-1; j++)
+		// {
+			// System.out.println("A");
+			// String entryStr = entryStrs[j];
+			// ArrayList<String> list = new ArrayList<String>();
+			// ret.put(entryStr.split(""+(char)2)[0], list);
+			// if (entryStr.indexOf(""+(char)2)!=-1)
+			// {
+				// try{
+				// String[] subentryStrs = entryStr.split(""+(char)2)[1].split(""+(char)1);
+				// for (int i = 0; i < subentryStrs.length; i++)
+				// {
+					// System.out.println("B");
+					// list.add(subentryStrs[i]);
+				// }}catch(Exception ex){}
+			// }
+		// }
+		// return ret;
+	// }
 	public static BufferedImage stitchImages(String[] packCards) throws IOException
 	{
 		ArrayList<BufferedImage> packImages = new ArrayList<BufferedImage>();
@@ -494,11 +630,11 @@ public final class ExampleBot
 	// asol.jpeg --> Aurelion Sol
 	public static String getCardDisplayName(String rawName)
 	{
-		return cardInfo.get(rawName)==null || cardInfo.get(rawName).get("display_name") == null?SysUtils.toTitleCase(rawName.split("\\.")[0]):cardInfo.get(rawName).get("display_name")[0].trim();
+		return cardInfo.get(rawName)==null || cardInfo.get(rawName).get("display_name") == null?SysUtils.toTitleCase(rawName.split("\\.")[0]):cardInfo.get(rawName).get("display_name").get(0).trim();
 	}
 	public static String getCardDescription(String rawName)
 	{
-		return cardInfo.get(rawName)==null || cardInfo.get(rawName).get("display_description") == null?"":cardInfo.get(rawName).get("display_description")[0].trim();
+		return cardInfo.get(rawName)==null || cardInfo.get(rawName).get("display_description") == null?"":cardInfo.get(rawName).get("display_description").get(0).trim();
 	}
 	public static ArrayList<String> getCardDungeonCategories(String rawName)
 	{
