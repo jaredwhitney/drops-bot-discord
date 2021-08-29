@@ -72,7 +72,7 @@ public final class ExampleBot
 		
 		final File[] cards = new File("/www/drops.0k.rip/card/").listFiles();
 		
-		inventory = loadMap("inventory.dropdata");
+		inventory = loadMap("/www/drops.0k.rip/inventory.dropdata");
 		for (ArrayList<String> cardlist : inventory.values())
 			for (String card : cardlist)
 				idLookup.put(card.split(""+(char)4)[1],true);
@@ -385,7 +385,7 @@ public final class ExampleBot
 							inventory.put(author, new ArrayList<String>());
 						inventory.get(author).add(cardinfo);
 						idLookup.put(cardparts[1], true);
-						saveMap(inventory, "inventory.dropdata");
+						saveMap(inventory, "/www/drops.0k.rip/inventory.dropdata");
 						renderedImage.remove(riOwner.get(author));
 						riOwner.remove(author);
 					}
@@ -406,7 +406,7 @@ public final class ExampleBot
 							cardInfo = cardparts[0] + ((char)4) + cardparts[1] + ((char)4) + cardparts[2] + ((char)4) + cardparts[3];
 							inventory.get(author).add(cardInfo);
 							idLookup.put(cardparts[1], true);
-							saveMap(inventory, "inventory.dropdata");
+							saveMap(inventory, "/www/drops.0k.rip/inventory.dropdata");
 							event.getChannel().block().createMessage("Enjoy your new " + cardparts[2] + " star " + getCardDisplayName(cardparts[0]) + " (level " + cardparts[3] + ")").subscribe();
 						}
 						else
