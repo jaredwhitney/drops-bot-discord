@@ -16,11 +16,6 @@ import java.sql.*;
 
 public final class ExampleBot
 {
-	public static final int DROP_CARDS = 3;
-	public static final int DROP_COOLDOWN_MS = 10 * TimeConstants.MILLISECONDS_PER_MINUTE;
-	
-	public static final int DG_OPTS = 3;
-	public static final int DG_COOLDOWN_MS = 10 * TimeConstants.MILLISECONDS_PER_MINUTE;
 	
 	public static final String DATABASE_LOCATION = "/www/drops.0k.rip/dropdatabase.db";
 	
@@ -42,6 +37,9 @@ public final class ExampleBot
 	public static Map<String,String> riOwner = new HashMap<String,String>();
 	public static final Random rand = new Random();
 	
+	public static int dropNumCards, dropCooldownMillis, dungeonNumOptions, dungeonCooldownMillis;
+	public static String botPrefix, botClientId;
+	
 	public static void main(final String[] args) throws SQLException
 	{
 		
@@ -54,19 +52,25 @@ public final class ExampleBot
 		statement.execute("CREATE TABLE IF NOT EXISTS cardInfoField (keyName string UNIQUE, questionFormat string NOT NULL, PRIMARY KEY (keyName))");
 		statement.execute("CREATE TABLE IF NOT EXISTS cardInfoEntry (id integer PRIMARY KEY AUTOINCREMENT, card string NOT NULL, field string NOT NULL, value string NOT NULL, FOREIGN KEY (card) REFERENCES cardDefinition(imageFilename), FOREIGN KEY (field) REFERENCES cardInfoField(keyName))");
 		
-		statement.execute("CREATE TABLE IF NOT EXISTS settings (dropNumCards int NOT NULL, dropCooldownMillis int NOT NULL, dungeonOptions int NOT NULL, dungeonCooldownMillis int NOT NULL, serverPort int NOT NULL, botPrefix string NOT NULL, siteUrl string NOT NULL, cardsFolder string NOT NULL, authHandler string NOT NULL)");
+		statement.execute("CREATE TABLE IF NOT EXISTS settings (dropNumCards int NOT NULL, dropCooldownMillis int NOT NULL, dungeonOptions int NOT NULL, dungeonCooldownMillis int NOT NULL, serverPort int NOT NULL, botPrefix string NOT NULL, siteUrl string NOT NULL, cardsFolder string NOT NULL, authHandler string NOT NULL, botToken string NOT NULL)");
 		if (statement.executeQuery("SELECT COUNT(*) as count FROM settings").getInt("count") == 0)
 		{
-			statement.execute("INSERT INTO settings (dropNumCards, dropCooldownMillis, dungeonOptions, dungeonCooldownMillis, serverPort, botPrefix, siteUrl, cardsFolder, authHandler) VALUES (3, 600000, 4, 600000, 28002, ',', 'drops.0k.rip', '/www/drops.0k.rip/card/', 'auth.aws1.0k.rip')");
+			statement.execute("INSERT INTO settings (dropNumCards, dropCooldownMillis, dungeonOptions, dungeonCooldownMillis, serverPort, botPrefix, siteUrl, cardsFolder, authHandler, botToken, botClientId) VALUES (3, 600000, 4, 600000, 28002, ',', 'drops.0k.rip', '/www/drops.0k.rip/card/', 'auth.aws1.0k.rip', 'INVALID_TOKEN_REPLACE_ME', 'INVALID_CLIENT_ID_REPLACE_ME')");
 		}
 		
 		ResultSet settingsRS = statement.executeQuery("SELECT * FROM settings LIMIT 1");
 		settingsRS.next();
-		String botPrefix = settingsRS.getString("botPrefix");
-		String authHandlerUrl = settingsRS.getString("authHandler");
+		
+		dropNumCards = settingsRS.getInt("dropNumCards");
+		dropCooldownMillis = settingsRS.getInt("dropCooldownMillis");
+		dungeonNumOptions = settingsRS.getInt("dungeonOptions");
+		dungeonCooldownMillis = settingsRS.getInt("dungeonCooldownMillis");
+		botPrefix = settingsRS.getString("botPrefix");
+		botClientId = settingsRS.getString("botClientId");
+		final String authHandlerUrl = settingsRS.getString("authHandler");
 		
 		HttpServer server = new HttpServer(settingsRS.getInt("serverPort"));
-		final String token = args[0];
+		final String token = settingsRS.getString("botToken");
 		final DiscordClient client = DiscordClient.create(token);
 		final GatewayDiscordClient gateway = client.login().block();
 		
@@ -169,14 +173,14 @@ public final class ExampleBot
 			{
 				final GuildMessageChannel channel = (GuildMessageChannel)message.getChannel().block();
 				Long userLastDrop = dropTime.get(message.getAuthor().orElseThrow(null).getId().asString());
-				if (userLastDrop != null && System.currentTimeMillis()-userLastDrop < DROP_COOLDOWN_MS)
+				if (userLastDrop != null && System.currentTimeMillis()-userLastDrop < dropCooldownMillis)
 				{
-					channel.createMessage("Sorry " + message.getAuthor().orElseThrow(null).asMember(channel.getGuild().block().getId()).block().getDisplayName() +", you need to wait another " + formatDuration(DROP_COOLDOWN_MS-(System.currentTimeMillis()-userLastDrop)) + " to drop :(").subscribe();
+					channel.createMessage("Sorry " + message.getAuthor().orElseThrow(null).asMember(channel.getGuild().block().getId()).block().getDisplayName() +", you need to wait another " + formatDuration(dropCooldownMillis-(System.currentTimeMillis()-userLastDrop)) + " to drop :(").subscribe();
 					return;
 				}
 				dropTime.put(message.getAuthor().orElseThrow(null).getId().asString(), System.currentTimeMillis());
 				String cardStr = "", cardStrS = "";
-				for (int i = 0; i < DROP_CARDS; i++)
+				for (int i = 0; i < dropNumCards; i++)
 				{
 					String cardn = cards[(int)(Math.random()*cards.length)];
 					String[] cardInf = genCard(cardn);
@@ -201,7 +205,7 @@ public final class ExampleBot
 					.setThumbnail(message.getAuthor().orElseThrow(null).getAvatarUrl())
 					.setTitle("Drops for " + message.getAuthor().orElseThrow(null).asMember(channel.getGuild().block().getId()).block().getDisplayName() + ":")
 					.setDescription("Pick a card to keep:");
-					for (int i = 0; i < DROP_CARDS; i++)
+					for (int i = 0; i < dropNumCards; i++)
 					{
 						temp = temp.addField("Card " + (i+1), getCardDisplayName(cardStrFS.split("\\+")[i]), true);
 					}
@@ -210,7 +214,7 @@ public final class ExampleBot
 					.setTimestamp(Instant.now());
 				}).flatMap(msg -> {String author = message.getAuthor().orElseThrow(null).getId().asString(); dropWaiting.put(author, new String[]{((Message)msg).getId().asString(), cardStrF}); dropChannel.put(author, channel);
 				var temp = msg.addReaction(ReactionEmoji.unicode(new String(new byte[]{(byte)(0x31),(byte)-17,(byte)-72,(byte)-113,(byte)-30,(byte)-125,(byte)-93})));
-				for (int i = 1; i < DROP_CARDS; i++)
+				for (int i = 1; i < dropNumCards; i++)
 					temp = temp.then(msg.addReaction(ReactionEmoji.unicode(new String(new byte[]{(byte)(0x31+i),(byte)-17,(byte)-72,(byte)-113,(byte)-30,(byte)-125,(byte)-93}))));
 				return temp;
 				}).subscribe();
@@ -261,9 +265,9 @@ public final class ExampleBot
 			{
 				final GuildMessageChannel channel = (GuildMessageChannel)message.getChannel().block();
 				Long userLastDrop = dgTime.get(message.getAuthor().orElseThrow(null).getId().asString());
-				if (userLastDrop != null && System.currentTimeMillis()-userLastDrop < DG_COOLDOWN_MS)
+				if (userLastDrop != null && System.currentTimeMillis()-userLastDrop < dungeonCooldownMillis)
 				{
-					channel.createMessage("Sorry " + message.getAuthor().orElseThrow(null).asMember(channel.getGuild().block().getId()).block().getDisplayName() +", you need to wait another " + formatDuration(DG_COOLDOWN_MS-(System.currentTimeMillis()-userLastDrop)) + " to attempt a dungeon :(").subscribe();
+					channel.createMessage("Sorry " + message.getAuthor().orElseThrow(null).asMember(channel.getGuild().block().getId()).block().getDisplayName() +", you need to wait another " + formatDuration(dungeonCooldownMillis-(System.currentTimeMillis()-userLastDrop)) + " to attempt a dungeon :(").subscribe();
 					return;
 				}
 				dgTime.put(message.getAuthor().orElseThrow(null).getId().asString(), System.currentTimeMillis());
@@ -274,7 +278,7 @@ public final class ExampleBot
 					ArrayList<String> possibleCategories = getCardDungeonCategories(cardn);
 					for (int i = 0; i < possibleCategories.size(); i++)
 					{
-						if (dgopts.get(possibleCategories.get(i)).size() < DG_OPTS)
+						if (dgopts.get(possibleCategories.get(i)).size() < dungeonNumOptions)
 						{
 							possibleCategories.remove(i);
 							i--;
@@ -285,13 +289,13 @@ public final class ExampleBot
 						String category = possibleCategories.get((int)(Math.random()*possibleCategories.size()));
 						ArrayList<String> correctOptns = cardInfo.get(cardn).get(category);
 						String correctOptn = correctOptns.get((int)(Math.random()*correctOptns.size()));
-						String[] opts = new String[DG_OPTS];
+						String[] opts = new String[dungeonNumOptions];
 						int correctIndex = (int)(Math.random()*opts.length);
 						opts[correctIndex] = correctOptn;
 						ArrayList<String> possibleChoices = dgopts.get(category);
 						for (int i = 0; i < correctOptns.size(); i++)
 							possibleChoices.remove(correctOptns.get(i));
-						if (possibleChoices.size()+1 < DG_OPTS)
+						if (possibleChoices.size()+1 < dungeonNumOptions)
 							continue;
 						Collections.shuffle(possibleChoices);
 						for (int i = 0; i < opts.length; i++)
@@ -336,8 +340,8 @@ public final class ExampleBot
 				final GuildMessageChannel channel = (GuildMessageChannel)message.getChannel().block();
 				String authoru = message.getAuthor().orElseThrow().asMember(channel.getGuild().block().getId()).block().getDisplayName();
 				String author = message.getAuthor().orElseThrow().getId().asString();
-				long dropCd = dropTime.get(author) == null ? 0 : DROP_COOLDOWN_MS - (System.currentTimeMillis()-dropTime.get(author));
-				long dungeonCd = dgTime.get(author) == null ? 0 : DG_COOLDOWN_MS - (System.currentTimeMillis()-dgTime.get(author));
+				long dropCd = dropTime.get(author) == null ? 0 : dropCooldownMillis - (System.currentTimeMillis()-dropTime.get(author));
+				long dungeonCd = dgTime.get(author) == null ? 0 : dungeonCooldownMillis - (System.currentTimeMillis()-dgTime.get(author));
 				channel.createEmbed(spec ->
 							spec.setTitle("Cooldowns")
 								.setDescription("for " + authoru)
@@ -361,6 +365,7 @@ public final class ExampleBot
 					+ "<a href=\"/admin/settings\">General Settings</a><br>"
 					+ "<a href=\"/admin/cardpacks\">View / edit card packs</a><br>"
 					+ "<a href=\"/admin/cards\">View / edit cards</a><br>"
+					+ "<a href=\"https://discordapp.com/api/oauth2/authorize?client_id=" + botClientId + "&permissions=243336208192&scope=bot\">Add drops bot to a Discord server</a><br>"
 				+ "</body>");
 			}
 			if (!auth.enforceValidCredentials("drops-admin"))
@@ -422,24 +427,27 @@ public final class ExampleBot
 			}
 			else if (req.matches(HttpVerb.GET, "/admin/card"))
 			{
-				String card = req.getParam("name")[0];
-				req.respond("<body>"
-					+ "<form enctype=\"multipart/form-data\">"
-					+ "<label for=\"display_name\">Display Name</label>"
-					+ "<input id=\"display_name\" value=\"" + (cardInfo.get(card)==null?"":cardInfo.get(card)) + "\"></input><br>"
-					+ "<input type=\"hidden\" id=\"name\" value=\"" + card + "\"></input><br>"
-					+ "<input type=\"submit\"></input><br>"
-					+ "</form>"
-				+ "</body>");
+				// TODO
+				// String card = req.getParam("name")[0];
+				// req.respond("<body>"
+					// + "<form enctype=\"multipart/form-data\">"
+					// + "<label for=\"display_name\">Display Name</label>"
+					// + "<input id=\"display_name\" value=\"" + (cardInfo.get(card)==null?"":cardInfo.get(card)) + "\"></input><br>"
+					// + "<input type=\"hidden\" id=\"name\" value=\"" + card + "\"></input><br>"
+					// + "<input type=\"submit\"></input><br>"
+					// + "</form>"
+				// + "</body>");
+				req.respond(HttpStatus.NOT_FOUND_404);
 			}
 			else if (req.matches(HttpVerb.POST, "/admin/card"))
 			{
 				// TODO
-				String card = req.getParam("name")[0];
-				String displayName = new String(req.getMultipart("display_name")[0].filedata, java.nio.charset.StandardCharsets.UTF_8);
-				if (displayName.trim().length() == 0)
-					displayName = null;
-				req.respond(HttpStatus.TEMPORARY_REDIRECT_302, "Location: /admin/card?name=" + card);
+				// String card = req.getParam("name")[0];
+				// String displayName = new String(req.getMultipart("display_name")[0].filedata, java.nio.charset.StandardCharsets.UTF_8);
+				// if (displayName.trim().length() == 0)
+					// displayName = null;
+				// req.respond(HttpStatus.TEMPORARY_REDIRECT_302, "Location: /admin/card?name=" + card);
+				req.respond(HttpStatus.NOT_FOUND_404);
 			}
 			else if (req.matches(HttpVerb.GET, "/admin/infofield"))
 			{
@@ -468,7 +476,9 @@ public final class ExampleBot
 					resp += "Dungeon cooldown (milliseconds): <input name=\"dungeonCooldownMillis\" value=\"" + settingsRS2.getInt("dungeonCooldownMillis") + "\"/><br>";
 					resp += "<h2>Bot Config</h2>";
 					resp += "Bot prefix: <input name=\"botPrefix\" value=\"" + settingsRS2.getString("botPrefix") + "\"/><br>";
-					resp += "<h2>App Config</h2>";
+					resp += "Bot client ID: <input name=\"botClientId\" value=\"" + settingsRS2.getString("botClientId") + "\"/><br>";
+					resp += "Bot token (RESTART REQUIRED): <input name=\"botToken\" value=\"" + settingsRS2.getString("botToken") + "\"/><br>";
+					resp += "<h2>App Config (RESTART REQUIRED for all)</h2>";
 					resp += "Local Port: <input name=\"serverPort\" value=\"" + settingsRS2.getInt("serverPort") + "\"/><br>";
 					resp += "Public URL: <input name=\"siteUrl\" value=\"" + settingsRS2.getString("siteUrl") + "\"/><br>";
 					resp += "Auth Handler Public URL: <input name=\"authHandler\" value=\"" + settingsRS2.getString("authHandler") + "\"/><br>";
@@ -488,17 +498,31 @@ public final class ExampleBot
 			{
 				try
 				{
+					int dropNumCardsCandidate = Integer.parseInt(new String(req.getMultipart("dropNumCards")[0].filedata, java.nio.charset.StandardCharsets.UTF_8));
+					int dropCooldownMillisCandidate = Integer.parseInt(new String(req.getMultipart("dropCooldownMillis")[0].filedata, java.nio.charset.StandardCharsets.UTF_8));
+					int dungeonNumOptionsCandidate = Integer.parseInt(new String(req.getMultipart("dungeonOptions")[0].filedata, java.nio.charset.StandardCharsets.UTF_8));
+					int dungeonCooldownMillisCandidate = Integer.parseInt(new String(req.getMultipart("dungeonCooldownMillis")[0].filedata, java.nio.charset.StandardCharsets.UTF_8));
+					String botPrefixCandidate = new String(req.getMultipart("botPrefix")[0].filedata, java.nio.charset.StandardCharsets.UTF_8);
+					String botClientIdCandidate = new String(req.getMultipart("botClientId")[0].filedata, java.nio.charset.StandardCharsets.UTF_8);
 					statement.execute("UPDATE settings SET "
-						+ "dropNumCards = " + Integer.parseInt(new String(req.getMultipart("dropNumCards")[0].filedata, java.nio.charset.StandardCharsets.UTF_8)) + ","
-						+ "dropCooldownMillis = " + Integer.parseInt(new String(req.getMultipart("dropCooldownMillis")[0].filedata, java.nio.charset.StandardCharsets.UTF_8)) + ","
-						+ "dungeonOptions = " + Integer.parseInt(new String(req.getMultipart("dungeonOptions")[0].filedata, java.nio.charset.StandardCharsets.UTF_8)) + ","
-						+ "dungeonCooldownMillis = " + Integer.parseInt(new String(req.getMultipart("dungeonCooldownMillis")[0].filedata, java.nio.charset.StandardCharsets.UTF_8)) + ","
+						+ "dropNumCards = " + dropNumCardsCandidate + ","
+						+ "dropCooldownMillis = " + dropCooldownMillisCandidate + ","
+						+ "dungeonOptions = " + dungeonNumOptionsCandidate + ","
+						+ "dungeonCooldownMillis = " + dungeonCooldownMillisCandidate + ","
 						+ "serverPort = " + Integer.parseInt(new String(req.getMultipart("serverPort")[0].filedata, java.nio.charset.StandardCharsets.UTF_8)) + ","
-						+ "botPrefix = '" + new String(req.getMultipart("botPrefix")[0].filedata, java.nio.charset.StandardCharsets.UTF_8) + "',"
+						+ "botPrefix = '" + botPrefixCandidate + "',"
+						+ "botClientId = '" + botClientIdCandidate + "',"
+						+ "botToken = '" + new String(req.getMultipart("botToken")[0].filedata, java.nio.charset.StandardCharsets.UTF_8) + "',"
 						+ "siteUrl = '" + new String(req.getMultipart("siteUrl")[0].filedata, java.nio.charset.StandardCharsets.UTF_8) + "',"
 						+ "authHandler = '" + new String(req.getMultipart("authHandler")[0].filedata, java.nio.charset.StandardCharsets.UTF_8) + "',"
 						+ "cardsFolder = '" + new String(req.getMultipart("cardsFolder")[0].filedata, java.nio.charset.StandardCharsets.UTF_8) + "'"
 					);
+					dropNumCards = dropNumCardsCandidate;
+					dropCooldownMillis = dropCooldownMillisCandidate;
+					dungeonNumOptions = dungeonNumOptionsCandidate;
+					dungeonCooldownMillis = dungeonCooldownMillisCandidate;
+					botPrefix = botPrefixCandidate;
+					botClientId = botClientIdCandidate;
 					req.respondWithHeaders1(
 						HttpStatus.TEMPORARY_REDIRECT_302,
 						"Redirecting you to <a href=\"/admin/settings\">/admin/settings</a>",

@@ -25,7 +25,3 @@ jar {
 
 mainClassName = 'ExampleBot'
 
-run {
-	args = ["ODc2Mjg3MjE5NTcxMjM2OTE0.YRh4EQ.TLAE-Qf_pSOiJ8a0eFq0pUDYtL4"]
-}
-
