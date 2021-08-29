@@ -453,14 +453,63 @@ public final class ExampleBot
 			}
 			else if (req.matches(HttpVerb.GET, "/admin/settings"))
 			{
-				// TODO
-				req.respond(HttpStatus.NOT_FOUND_404);
+				try
+				{
+					ResultSet settingsRS2 = statement.executeQuery("SELECT * FROM settings LIMIT 1");
+					settingsRS2.next();
+					String resp = "<body>";
+					resp += "<form enctype=\"multipart/form-data\" action=\"/admin/settings\" method=\"post\">";
+					resp += "<h1>Settings</h1>";
+					resp += "<h2>Drops</h2>";
+					resp += "Number of cards to drop at once: <input name=\"dropNumCards\" value=\"" + settingsRS2.getInt("dropNumCards") + "\"/><br>";
+					resp += "Drop cooldown (milliseconds): <input name=\"dropCooldownMillis\" value=\"" + settingsRS2.getInt("dropCooldownMillis") + "\"/><br>";
+					resp += "<h2>Dungeon</h2>";
+					resp += "Number of dungeon answers to choose from: <input name=\"dungeonOptions\" value=\"" + settingsRS2.getInt("dungeonOptions") + "\"/><br>";
+					resp += "Dungeon cooldown (milliseconds): <input name=\"dungeonCooldownMillis\" value=\"" + settingsRS2.getInt("dungeonCooldownMillis") + "\"/><br>";
+					resp += "<h2>Bot Config</h2>";
+					resp += "Bot prefix: <input name=\"botPrefix\" value=\"" + settingsRS2.getString("botPrefix") + "\"/><br>";
+					resp += "<h2>App Config</h2>";
+					resp += "Local Port: <input name=\"serverPort\" value=\"" + settingsRS2.getInt("serverPort") + "\"/><br>";
+					resp += "Public URL: <input name=\"siteUrl\" value=\"" + settingsRS2.getString("siteUrl") + "\"/><br>";
+					resp += "Auth Handler Public URL: <input name=\"authHandler\" value=\"" + settingsRS2.getString("authHandler") + "\"/><br>";
+					resp += "Card Images Folder: <input name=\"cardsFolder\" value=\"" + settingsRS2.getString("cardsFolder") + "\"/><br>";
+					resp += "<input type=\"submit\" value=\"Save changes\"/>";
+					resp += "</form>";
+					resp += "<a href=\"/\">Cancel</a>";
+					resp += "</body>";
+					req.respond(resp);
+				}
+				catch (SQLException ex)
+				{
+					req.respond("Internal error: " + ex.getMessage());
+				}
 			}
 			else if (req.matches(HttpVerb.POST, "/admin/settings"))
 			{
-				// TODO
-				// statement.execute("UPDATE settings SET (dropNumCards, dropCooldownMillis, dungeonOptions, dungeonCooldownMillis, serverPort, botPrefix, siteUrl, authHandler) = VALUES (" + Integer.parseInt(req.getMultipart("dropNumCards").filedata) + "," + Integer.parseInt(req.getMultipart("dropCooldownMillis").filedata) + "," +  + ",?)");
-				req.respond(HttpStatus.TEMPORARY_REDIRECT_302, "Location: /admin/settings");
+				try
+				{
+					statement.execute("UPDATE settings SET (dropNumCards, dropCooldownMillis, dungeonOptions, dungeonCooldownMillis, serverPort, botPrefix, siteUrl, authHandler, cardsFolder) = VALUES ("
+						+ Integer.parseInt(new String(req.getMultipart("dropNumCards")[0].filedata, java.nio.charset.StandardCharsets.UTF_8)) + ","
+						+ Integer.parseInt(new String(req.getMultipart("dropCooldownMillis")[0].filedata, java.nio.charset.StandardCharsets.UTF_8)) + ","
+						+ Integer.parseInt(new String(req.getMultipart("dungeonOptions")[0].filedata, java.nio.charset.StandardCharsets.UTF_8)) + ","
+						+ Integer.parseInt(new String(req.getMultipart("dungeonCooldownMillis")[0].filedata, java.nio.charset.StandardCharsets.UTF_8)) + ","
+						+ Integer.parseInt(new String(req.getMultipart("serverPort")[0].filedata, java.nio.charset.StandardCharsets.UTF_8)) + ","
+						+ "'" + new String(req.getMultipart("botPrefix")[0].filedata, java.nio.charset.StandardCharsets.UTF_8) + "',"
+						+ "'" + new String(req.getMultipart("siteUrl")[0].filedata, java.nio.charset.StandardCharsets.UTF_8) + "',"
+						+ "'" + new String(req.getMultipart("authHandler")[0].filedata, java.nio.charset.StandardCharsets.UTF_8) + "',"
+						+ "'" + new String(req.getMultipart("cardsFolder")[0].filedata, java.nio.charset.StandardCharsets.UTF_8) + "'"
+						+ ")"
+					);
+					req.respondWithHeaders1(
+						HttpStatus.TEMPORARY_REDIRECT_302,
+						"Redirecting you to <a href=\"/admin/settings\">/admin/settings</a>",
+						"Location: /admin/settings"
+					);
+				}
+				catch (SQLException ex)
+				{
+					req.respond("Internal error: " + ex.getMessage());
+				}
 			}
 			else
 			{
