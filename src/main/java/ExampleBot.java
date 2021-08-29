@@ -560,7 +560,7 @@ class Card
 	}
 	public static Card readFromDB()
 	{
-		
+		return null;
 	}
 }
 class Inventory
