@@ -60,7 +60,7 @@ public final class ExampleBot
 			statement.execute("INSERT INTO settings (dropNumCards, dropCooldownMillis, dungeonOptions, dungeonCooldownMillis, serverPort, botPrefix, siteUrl, cardsFolder, authHandler) VALUES (3, 600000, 4, 600000, 28002, ',', 'drops.0k.rip', '/www/drops.0k.rip/card/', 'auth.aws1.0k.rip')");
 		}
 		
-		ResultSet settingsRS = statement.executeQuery("SELECT TOP 1 * FROM settings");
+		ResultSet settingsRS = statement.executeQuery("SELECT * FROM settings LIMIT 1");
 		settingsRS.next();
 		String botPrefix = settingsRS.getString("botPrefix");
 		
