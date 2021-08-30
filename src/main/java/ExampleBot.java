@@ -904,8 +904,12 @@ public final class ExampleBot
 	}
 	public static void rebuildCardInfo(Map<String,HashMap<String,ArrayList<String>>> cardInfo, String card, Statement statement) throws SQLException
 	{
-		HashMap<String,ArrayList<String>> inf = cardInfo.get(card);
-		inf.clear();
+		HashMap<String,ArrayList<String>> oldInf = cardInfo.get(card);
+		HashMap<String,ArrayList<String>> inf = new HashMap<String,ArrayList<String>>();
+		cardInfo.put(card, inf);
+		inf.put("category", oldInf.get("category"));
+		inf.put("display_name", oldInf.get("display_name"));
+		inf.put("display_description", oldInf.get("display_description"));
 		ResultSet cardInfoRS = statement.executeQuery("SELECT * FROM cardInfoEntry WHERE card = '" + card  + "'");
 		while (cardInfoRS.next())
 		{
