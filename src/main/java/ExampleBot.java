@@ -117,7 +117,7 @@ public final class ExampleBot
 			
 			System.out.println("Loaded definition for card " + getCardDisplayName(cardID));
 		}
-		final String cards[] = cardInfo.keySet().toArray(String[]::new);
+		final ArrayList<String> cards = new ArrayList<String>(cardInfo.keySet());
 		
 		ResultSet cardInstanceRS = statement.executeQuery("SELECT * FROM cardInstance");
 		while (cardInstanceRS.next())
@@ -204,6 +204,8 @@ public final class ExampleBot
 				else if (req.matches(HttpVerb.GET, "/admin/cardpacks"))
 				{
 					String resp = "<body>";
+					resp += "<a href=\"/admin/cardpacks/add\">Create a new cardpack</a><br>";
+					resp += "<h1>Card packs</h1>"
 					for (String pack : cardPacks.keySet())
 					{
 						resp += "<a href=\"/admin/cardpack?name=" + pack + "\">" + pack + " (" + cardPacks.get(pack).size() + " cards)</a><br>";
@@ -211,10 +213,41 @@ public final class ExampleBot
 					resp += "</body>";
 					req.respond(resp);
 				}
+				else if (req.matches(HttpVerb.GET, "/admin/cardpacks/add"))
+				{
+					String resp = "<body>"
+						+ "<form type=\"multipart/form-data\" action=\"/admin/cardpacks/add\" method=\"post\">"
+							+ "Cardpack Name: <input name=\"packName\"/><br>"
+							+ "<input type=\"submit\" value=\"Create card pack!\">"
+						+ "</form>"
+						+ "<a href=\"/admin/cardpacks\">Cancel</a>";
+						+ "</body>";
+					req.respond(resp);
+				}
+				else if (req.matches(HttpVerb.POST, "/admin/cardpacks/add"))
+				{
+					try
+					{
+						String cardPackName = new String(req.getMultipart("botPrefix")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
+						statement.execute("INSERT INTO cardpack (packName) VALUES ('" + cardPackName + "')");
+						cardPacks.add(cardPackName, new ArrayList<String>());
+						req.respondWithHeaders1(
+							HttpStatus.TEMPORARY_REDIRECT_302,
+							"Redirecting you to <a href=\"/admin/cardpack?name=" + cardPackName + "\">/admin/cardpack?name=" + cardPackName + "</a>",
+							"Location: /admin/cardpack?name=" + cardPackName
+						);
+					}
+					catch (SQLException ex)
+					{
+						req.respond("Internal error: " + ex.getMessage());
+					}
+				}
 				else if (req.matches(HttpVerb.GET, "/admin/cardpack"))
 				{
 					String pack = req.getParam("name")[0];
 					String resp = "<body>";
+					resp += "<h1>Card pack: " + pack + "</h1>"
+					resp += "<a href=\"/admin/cards/add?pack=" + pack + "\">Add a new card to this pack</a><br>"
 					resp += "<h2>Pack cards:</h2>";
 					for (String card : cardPacks.get(pack))
 					{
@@ -233,18 +266,76 @@ public final class ExampleBot
 					resp += "</body>";
 					req.respond(resp);
 				}
+				else if (req.matches(HttpVerb.GET, "/admin/cards/add"))
+				{
+					String defaultPack = req.getParam("pack").length==0?"":req.getParam("pack")[0];
+					String packsOptions = "";
+					for (String pack : cardPacks.keySet())
+						packsOptions += "<option value=\"" + pack + "\"" + (pack.equals(defaultPack)?" selected":"") + ">" + pack + "</option>";
+					String resp = "<body>"
+						+ "<form enctype=\"multipart/form-data\" action=\"/admin/cards/add?pack=" + pack + "\" method=\"post\">"
+							+ "Display name: <input name=\"displayName\"><br>"
+							+ "Display description: <input name=\"displayDescription\"><br>"
+							+ "Card pack: <select name=\"cardPack\">" + packsOptions + "</select>"	// value=\"" + defaultPack + "\"><br>"
+							+ "Card Image: <input name=\"cardImage\" type=\"file\">"
+							+ "<input type=\"submit\" value=\"Create card!\"/>"
+						+ "</form>"
+						+ "<a href=\"/admin/" + (defaultPack.length()>0?"cardpack?name=" + defaultPack:"cards") + "\">Cancel</a>"
+						+ "</body>";
+						req.respond(resp);
+				}
+				else if (req.matches(HttpVerb.POST, "/admin/cards/add"))
+				{
+					try
+					{
+						String displayDescription = new String(req.getMultipart("displayDescription")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
+						String cardPack = new String(req.getMultipart("cardPack")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
+						HttpRequest.Multipart fileDesc = req.getMultipart("cardImage");
+						String rawName = SysUtils.stripDangerousCharacters(fileDesc.filename.substring(0, fileDesc.filename.lastIndexOf("."))) + "." + SysUtils.stripDangerousCharacters(fileDesc.filename.substring(fileDesc.filename.lastIndexOf(".")));
+						Files.write(Paths.get(cardsFolder + File.separator + rawName), fileDesc.filedata);
+						String displayName = new String(req.getMultipart("displayName")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
+						if (displayName.length() == 0)
+							displayName = SysUtils.toTitleCase(rawName);
+						statement.execute("INSERT INTO cardDefinition (imageFilename, displayName, displayDescription, packName) VALUES ('"
+							+ rawName + "',"
+							+ "'" + displayName + "',"
+							+ "'" + displayDescription + "',"
+							+ "'" + cardPack + "'"
+							+ "')");
+						cardInfo.put(rawName, new HashMap<String,String>());
+						cardInfo.get(rawName).put("display_name", displayName);
+						cardInfo.get(rawName).put("display_description", displayDescription);
+						cardInfo.get(rawName).put("category", cardPack)
+						cards.add(rawName);
+						cardPacks.add(cardPackName, new ArrayList<String>());
+						String redirectURL = (req.getParam("pack").length==0 ? "/admin/card?name="+rawName : "/admin/cardpack?name=" + cardPack);
+						req.respondWithHeaders1(
+							HttpStatus.TEMPORARY_REDIRECT_302,
+							"Redirecting you to <a href=\"" + redirectURL + "\">" + redirectURL + "</a>",
+							"Location: " + redirectURL
+						);
+					}
+					catch (SQLException|IOException ex)
+					{
+						req.respond("Internal error: " + ex.getMessage());
+					}
+				}
 				else if (req.matches(HttpVerb.GET, "/admin/card"))
 				{
-					// TODO
-					// String card = req.getParam("name")[0];
-					// req.respond("<body>"
-						// + "<form enctype=\"multipart/form-data\">"
-						// + "<label for=\"display_name\">Display Name</label>"
-						// + "<input id=\"display_name\" value=\"" + (cardInfo.get(card)==null?"":cardInfo.get(card)) + "\"></input><br>"
-						// + "<input type=\"hidden\" id=\"name\" value=\"" + card + "\"></input><br>"
-						// + "<input type=\"submit\"></input><br>"
-						// + "</form>"
-					// + "</body>");
+					String card = req.getParam("name")[0];
+					String cardDGInfo = "";
+					for (String key : getCardDungeonCategories(card))
+						cardDGInfo += key + ": " + cardInfo.get(card).get(key) + "<br>";
+					req.respond("<body>"
+						+ "<img src=/card/" + card + "/><br>"
+						+ "<h2>General Info</h2>"
+						+ "Display Name: " + getCardDisplayName(card) + "<br>"
+						+ "Display Description: " + getCardDescription(card) + "<br>"
+						+ "Card Pack: " + cardInfo.get(card).get("category") + "<br>"
+						+ "<h2>Dungeon Info</h2>"
+						+ cardDGInfo
+						+ "</body>"
+					);
 					req.respond(HttpStatus.NOT_FOUND_404);
 				}
 				else if (req.matches(HttpVerb.POST, "/admin/card"))
@@ -306,24 +397,24 @@ public final class ExampleBot
 				{
 					try
 					{
-						int dropNumCardsCandidate = Integer.parseInt(new String(req.getMultipart("dropNumCards")[0].filedata, java.nio.charset.StandardCharsets.UTF_8));
-						int dropCooldownMillisCandidate = Integer.parseInt(new String(req.getMultipart("dropCooldownMillis")[0].filedata, java.nio.charset.StandardCharsets.UTF_8));
-						int dungeonNumOptionsCandidate = Integer.parseInt(new String(req.getMultipart("dungeonOptions")[0].filedata, java.nio.charset.StandardCharsets.UTF_8));
-						int dungeonCooldownMillisCandidate = Integer.parseInt(new String(req.getMultipart("dungeonCooldownMillis")[0].filedata, java.nio.charset.StandardCharsets.UTF_8));
-						String botPrefixCandidate = new String(req.getMultipart("botPrefix")[0].filedata, java.nio.charset.StandardCharsets.UTF_8);
-						String botClientIdCandidate = new String(req.getMultipart("botClientId")[0].filedata, java.nio.charset.StandardCharsets.UTF_8);
+						int dropNumCardsCandidate = Integer.parseInt(new String(req.getMultipart("dropNumCards")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim());
+						int dropCooldownMillisCandidate = Integer.parseInt(new String(req.getMultipart("dropCooldownMillis")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim());
+						int dungeonNumOptionsCandidate = Integer.parseInt(new String(req.getMultipart("dungeonOptions")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim());
+						int dungeonCooldownMillisCandidate = Integer.parseInt(new String(req.getMultipart("dungeonCooldownMillis")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim());
+						String botPrefixCandidate = new String(req.getMultipart("botPrefix")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
+						String botClientIdCandidate = new String(req.getMultipart("botClientId")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
 						statement.execute("UPDATE settings SET "
 							+ "dropNumCards = " + dropNumCardsCandidate + ","
 							+ "dropCooldownMillis = " + dropCooldownMillisCandidate + ","
 							+ "dungeonOptions = " + dungeonNumOptionsCandidate + ","
 							+ "dungeonCooldownMillis = " + dungeonCooldownMillisCandidate + ","
-							+ "serverPort = " + Integer.parseInt(new String(req.getMultipart("serverPort")[0].filedata, java.nio.charset.StandardCharsets.UTF_8)) + ","
+							+ "serverPort = " + Integer.parseInt(new String(req.getMultipart("serverPort")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim()) + ","
 							+ "botPrefix = '" + botPrefixCandidate + "',"
 							+ "botClientId = '" + botClientIdCandidate + "',"
-							+ "botToken = '" + new String(req.getMultipart("botToken")[0].filedata, java.nio.charset.StandardCharsets.UTF_8) + "',"
-							+ "siteUrl = '" + new String(req.getMultipart("siteUrl")[0].filedata, java.nio.charset.StandardCharsets.UTF_8) + "',"
-							+ "authHandler = '" + new String(req.getMultipart("authHandler")[0].filedata, java.nio.charset.StandardCharsets.UTF_8) + "',"
-							+ "cardsFolder = '" + new String(req.getMultipart("cardsFolder")[0].filedata, java.nio.charset.StandardCharsets.UTF_8) + "'"
+							+ "botToken = '" + new String(req.getMultipart("botToken")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim() + "',"
+							+ "siteUrl = '" + new String(req.getMultipart("siteUrl")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim() + "',"
+							+ "authHandler = '" + new String(req.getMultipart("authHandler")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim() + "',"
+							+ "cardsFolder = '" + new String(req.getMultipart("cardsFolder")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim() + "'"
 						);
 						dropNumCards = dropNumCardsCandidate;
 						dropCooldownMillis = dropCooldownMillisCandidate;
