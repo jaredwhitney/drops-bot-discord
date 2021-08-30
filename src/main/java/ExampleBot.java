@@ -304,7 +304,7 @@ public final class ExampleBot
 							+ "'" + displayName + "',"
 							+ "'" + displayDescription + "',"
 							+ "'" + cardPack + "'"
-							+ "')");
+							+ ")");
 						cardInfo.put(rawName, new HashMap<String,ArrayList<String>>());
 						cardInfo.get(rawName).put("display_name", list(displayName));
 						cardInfo.get(rawName).put("display_description", list(displayDescription));
