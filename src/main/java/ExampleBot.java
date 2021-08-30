@@ -334,7 +334,7 @@ public final class ExampleBot
 						+ "<h2>General Info</h2>"
 						+ "Display Name: " + getCardDisplayName(card) + "<br>"
 						+ "Display Description: " + getCardDescription(card) + "<br>"
-						+ "Card Pack: " + cardInfo.get(card).get("category")[0] + "<br>"
+						+ "Card Pack: " + cardInfo.get(card).get("category").get(0) + "<br>"
 						+ "<h2>Dungeon Info</h2>"
 						+ cardDGInfo
 						+ "</body>"
