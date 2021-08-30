@@ -355,13 +355,13 @@ public final class ExampleBot
 						String card = req.getParam("name")[0];
 						String ret = "<body>";
 						String optionsString = "<select name=\"key\">";
-						ResultSet cardInfoFRS = statement.executeQuery("SELECT keyName, questionFormat FROM cardInfoField");
+						ResultSet cardInfoFRS = connection.createStatement().executeQuery("SELECT keyName, questionFormat FROM cardInfoField");
 						while (cardInfoFRS.next())
 						{
 							optionsString += "<option value=\"" + cardInfoFRS.getString("keyName") + "\">" + cardInfoFRS.getString("questionFormat") + "</option>";
 						}
 						optionsString += "</select>";
-						ResultSet cardInfoERS = statement.executeQuery("SELECT id, field, value FROM cardInfoEntry WHERE card = '" + card + "'");
+						ResultSet cardInfoERS = connection.createStatement().executeQuery("SELECT id, field, value FROM cardInfoEntry WHERE card = '" + card + "'");
 						ret += "<form enctype=\"multipart/form-data\" action=\"/admin/card/extra/add\" method=\"post\">" + optionsString + ": <input name=\"value\"><input type=\"hidden\" value=\"" + card + "\" name=\"card\"/><input type=\"submit\" value=\"add entry\"/></form>";
 						while (cardInfoERS.next())
 						{
