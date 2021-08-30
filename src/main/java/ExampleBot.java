@@ -366,7 +366,7 @@ public final class ExampleBot
 						{
 							String hiddenInputs = "<input type=\"hidden\" value=\"" + card + "\" name=\"card\"/><input type=\"hidden\" value=\"" + cardInfoERS.getInt("id") + "\" name=\"index\"/>";
 							ret += "<form enctype=\"multipart/form-data\" action=\"/admin/card/extra/remove\" method=\"post\"><input type=\"submit\" value=\"remove entry\">" + hiddenInputs + "</form>";
-							ret += cardInfoERS.getString("key") + ": <form enctype=\"multipart/form-data\" action=\"/admin/card/extra/edit\" method=\"post\"><input name=\"value\" value=\"" + cardInfoERS.getString("value") + "\">" + hiddenInputs + "<input type=\"submit\" value=\"update\"/></form>";
+							ret += cardInfoERS.getString("field") + ": <form enctype=\"multipart/form-data\" action=\"/admin/card/extra/edit\" method=\"post\"><input name=\"value\" value=\"" + cardInfoERS.getString("value") + "\">" + hiddenInputs + "<input type=\"submit\" value=\"update\"/></form>";
 							ret += "<br>";
 						}
 						req.respond(ret);
