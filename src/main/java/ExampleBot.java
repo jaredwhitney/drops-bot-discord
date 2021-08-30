@@ -10,6 +10,7 @@ import rip.$0k.utils.*;
 import java.util.*;
 import java.io.*;
 import java.nio.*;
+import java.nio.file.*;
 import javax.imageio.*;
 import java.awt.image.*;
 import java.sql.*;
@@ -68,6 +69,7 @@ public final class ExampleBot
 		botPrefix = settingsRS.getString("botPrefix");
 		botClientId = settingsRS.getString("botClientId");
 		final String authHandlerUrl = settingsRS.getString("authHandler");
+		final String cardsFolder = settingsRS.getString("cardsFolder");
 		
 		HttpServer server = new HttpServer(settingsRS.getInt("serverPort"));
 		final String botToken = settingsRS.getString("botToken");
@@ -205,7 +207,7 @@ public final class ExampleBot
 				{
 					String resp = "<body>";
 					resp += "<a href=\"/admin/cardpacks/add\">Create a new cardpack</a><br>";
-					resp += "<h1>Card packs</h1>"
+					resp += "<h1>Card packs</h1>";
 					for (String pack : cardPacks.keySet())
 					{
 						resp += "<a href=\"/admin/cardpack?name=" + pack + "\">" + pack + " (" + cardPacks.get(pack).size() + " cards)</a><br>";
@@ -220,7 +222,7 @@ public final class ExampleBot
 							+ "Cardpack Name: <input name=\"packName\"/><br>"
 							+ "<input type=\"submit\" value=\"Create card pack!\">"
 						+ "</form>"
-						+ "<a href=\"/admin/cardpacks\">Cancel</a>";
+						+ "<a href=\"/admin/cardpacks\">Cancel</a>"
 						+ "</body>";
 					req.respond(resp);
 				}
@@ -230,7 +232,7 @@ public final class ExampleBot
 					{
 						String cardPackName = new String(req.getMultipart("botPrefix")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
 						statement.execute("INSERT INTO cardpack (packName) VALUES ('" + cardPackName + "')");
-						cardPacks.add(cardPackName, new ArrayList<String>());
+						cardPacks.put(cardPackName, new ArrayList<String>());
 						req.respondWithHeaders1(
 							HttpStatus.TEMPORARY_REDIRECT_302,
 							"Redirecting you to <a href=\"/admin/cardpack?name=" + cardPackName + "\">/admin/cardpack?name=" + cardPackName + "</a>",
@@ -246,8 +248,8 @@ public final class ExampleBot
 				{
 					String pack = req.getParam("name")[0];
 					String resp = "<body>";
-					resp += "<h1>Card pack: " + pack + "</h1>"
-					resp += "<a href=\"/admin/cards/add?pack=" + pack + "\">Add a new card to this pack</a><br>"
+					resp += "<h1>Card pack: " + pack + "</h1>";
+					resp += "<a href=\"/admin/cards/add?pack=" + pack + "\">Add a new card to this pack</a><br>";
 					resp += "<h2>Pack cards:</h2>";
 					for (String card : cardPacks.get(pack))
 					{
@@ -273,7 +275,7 @@ public final class ExampleBot
 					for (String pack : cardPacks.keySet())
 						packsOptions += "<option value=\"" + pack + "\"" + (pack.equals(defaultPack)?" selected":"") + ">" + pack + "</option>";
 					String resp = "<body>"
-						+ "<form enctype=\"multipart/form-data\" action=\"/admin/cards/add?pack=" + pack + "\" method=\"post\">"
+						+ "<form enctype=\"multipart/form-data\" action=\"/admin/cards/add" + (defaultPack.length()==0?"":"?pack=" + defaultPack) + "\" method=\"post\">"
 							+ "Display name: <input name=\"displayName\"><br>"
 							+ "Display description: <input name=\"displayDescription\"><br>"
 							+ "Card pack: <select name=\"cardPack\">" + packsOptions + "</select>"	// value=\"" + defaultPack + "\"><br>"
@@ -290,7 +292,7 @@ public final class ExampleBot
 					{
 						String displayDescription = new String(req.getMultipart("displayDescription")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
 						String cardPack = new String(req.getMultipart("cardPack")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
-						HttpRequest.Multipart fileDesc = req.getMultipart("cardImage");
+						HttpRequest.Multipart fileDesc = req.getMultipart("cardImage")[0];
 						String rawName = SysUtils.stripDangerousCharacters(fileDesc.filename.substring(0, fileDesc.filename.lastIndexOf("."))) + "." + SysUtils.stripDangerousCharacters(fileDesc.filename.substring(fileDesc.filename.lastIndexOf(".")));
 						Files.write(Paths.get(cardsFolder + File.separator + rawName), fileDesc.filedata);
 						String displayName = new String(req.getMultipart("displayName")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
@@ -302,12 +304,12 @@ public final class ExampleBot
 							+ "'" + displayDescription + "',"
 							+ "'" + cardPack + "'"
 							+ "')");
-						cardInfo.put(rawName, new HashMap<String,String>());
-						cardInfo.get(rawName).put("display_name", displayName);
-						cardInfo.get(rawName).put("display_description", displayDescription);
-						cardInfo.get(rawName).put("category", cardPack)
+						cardInfo.put(rawName, new HashMap<String,ArrayList<String>>());
+						cardInfo.get(rawName).put("display_name", list(displayName));
+						cardInfo.get(rawName).put("display_description", list(displayDescription));
+						cardInfo.get(rawName).put("category", list(cardPack));
 						cards.add(rawName);
-						cardPacks.add(cardPackName, new ArrayList<String>());
+						cardPacks.get(cardPack).add(rawName);
 						String redirectURL = (req.getParam("pack").length==0 ? "/admin/card?name="+rawName : "/admin/cardpack?name=" + cardPack);
 						req.respondWithHeaders1(
 							HttpStatus.TEMPORARY_REDIRECT_302,
@@ -473,7 +475,7 @@ public final class ExampleBot
 					String cardStr = "", cardStrS = "";
 					for (int i = 0; i < dropNumCards; i++)
 					{
-						String cardn = cards[(int)(Math.random()*cards.length)];
+						String cardn = cards.get((int)(Math.random()*cards.size()));
 						String[] cardInf = genCard(cardn);
 						cardStr += (i>0?"+":"")+cardInf[0] + ((char)4) + cardInf[1] + ((char)4) + cardInf[2] + ((char)4) + cardInf[3];
 						cardStrS += (i>0?"+":"")+cardn;
@@ -564,7 +566,7 @@ public final class ExampleBot
 					dgTime.put(message.getAuthor().orElseThrow(null).getId().asString(), System.currentTimeMillis());
 					while (true)
 					{
-						String cardn = cards[(int)(Math.random()*cards.length)];
+						String cardn = cards.get((int)(Math.random()*cards.size()));
 						List<String> dglist = new ArrayList<String>(dgopts.keySet());
 						ArrayList<String> possibleCategories = getCardDungeonCategories(cardn);
 						for (int i = 0; i < possibleCategories.size(); i++)
@@ -778,6 +780,10 @@ public final class ExampleBot
 		// }
 		// return ret;
 	// }
+	public static <T> ArrayList<T> list(T... items)
+	{
+		return new ArrayList<T>(Arrays.asList(items));
+	}
 	public static BufferedImage stitchImages(String[] packCards) throws IOException
 	{
 		ArrayList<BufferedImage> packImages = new ArrayList<BufferedImage>();
