@@ -108,14 +108,7 @@ public final class ExampleBot
 			inf.put("category", dnCAT);
 			cardPacks.get(packName).add(cardID);
 			
-			ResultSet cardInfoRS = statement.executeQuery("SELECT * FROM cardInfoEntry WHERE card = '" + cardID  + "'");
-			while (cardInfoRS.next())
-			{
-				String field = cardInfoRS.getString("field");
-				if (inf.get(field) == null)
-					inf.put(field, new ArrayList<String>());
-				inf.get(field).add(cardInfoRS.getString("value"));
-			}
+			rebuildCardInfo(cardInfo, cardID, statement);
 			
 			System.out.println("Loaded definition for card " + getCardDisplayName(cardID));
 		}
@@ -335,7 +328,8 @@ public final class ExampleBot
 						+ "Display Name: " + getCardDisplayName(card) + "<br>"
 						+ "Display Description: " + getCardDescription(card) + "<br>"
 						+ "Card Pack: " + cardInfo.get(card).get("category").get(0) + "<br>"
-						+ "<h2>Dungeon Info</h2>"
+						+ "<h2>Extra Info</h2>"
+						+ "<a href=\"/admin/card/extra?name=" + card + "\">Edit extra info</a>"
 						+ cardDGInfo
 						+ "</body>"
 					);
@@ -350,6 +344,96 @@ public final class ExampleBot
 						// displayName = null;
 					// req.respond(HttpStatus.TEMPORARY_REDIRECT_302, "Location: /admin/card?name=" + card);
 					req.respond(HttpStatus.NOT_FOUND_404);
+				}
+				else if (req.matches(HttpVerb.GET, "/admin/card/extra"))
+				{
+					try
+					{
+						// hmm this isn't going to be particularly easy...
+						String card = req.getParam("name")[0];
+						String ret = "<body>";
+						String optionsString = "<select name=\"key\">";
+						ResultSet cardInfoFRS = statement.executeQuery("SELECT keyName FROM cardInfoField");
+						while (cardInfoFRS.next())
+						{
+							optionsString += "<option value=\"" + cardInfoFRS.getString("keyName") + "\">";
+						}
+						optionsString += "</select>";
+						ResultSet cardInfoERS = statement.executeQuery("SELECT id, field, value FROM cardInfoEntry WHERE card = '" + card + "'");
+						ret += "<form enctype=\"multipart/form-data\" action=\"/admin/card/extra/add\" method=\"post\">" + optionsString + ": <input name=\"value\"><input type=\"hidden\" value=\"" + card + "\" name=\"card\"/><input type=\"submit\" value=\"add entry\"/></form>";
+						while (cardInfoERS.next())
+						{
+							String hiddenInputs = "<input type=\"hidden\" value=\"" + card + "\" name=\"card\"/><input type=\"hidden\" value=\"" + cardInfoERS.getInt("index") + "\" name=\"index\"/>";
+							ret += "<form enctype=\"multipart/form-data\" action=\"/admin/card/extra/remove\" method=\"post\"><input type=\"submit\" value=\"remove entry\">" + hiddenInputs + "</form>";
+							ret += cardInfoERS.getString("key") + ": <form enctype=\"multipart/form-data\" action=\"/admin/card/extra/edit\" method=\"post\"><input name=\"value\" value=\"" + cardInfoERS.getString("value") + "\">" + hiddenInputs + "<input type=\"submit\" value=\"update\"/></form>";
+							ret += "<br>";
+						}
+					}
+					catch (SQLException ex)
+					{
+						req.respond("Internal error: " + ex.getMessage());
+					}
+				}
+				else if (req.matches(HttpVerb.POST, "/admin/card/extra/add"))
+				{
+					try
+					{
+						String card = new String(req.getMultipart("card")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
+						String key = new String(req.getMultipart("key")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
+						String value = new String(req.getMultipart("value")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
+						statement.execute("INSERT INTO cardInfoEntry (card, field, value) VALUES ('" + card + "','" + key + "','" + value + "')");
+						if (cardInfo.get(card).get(key) == null)
+							cardInfo.get(card).put(key, new ArrayList<String>());
+						cardInfo.get(card).get(key).add(value);
+						req.respondWithHeaders1(
+							HttpStatus.TEMPORARY_REDIRECT_302,
+							"Redirecting you to <a href=\"/admin/card/extra?name=" + card + "\">/admin/card/extra?name=" + card + "</a>",
+							"Location: /admin/card/extra?name=" + card
+						);
+					}
+					catch (SQLException ex)
+					{
+						req.respond("Internal error: " + ex.getMessage());
+					}
+				}
+				else if (req.matches(HttpVerb.POST, "/admin/card/extra/remove"))
+				{
+					try
+					{
+						String card = new String(req.getMultipart("card")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
+						int index = Integer.parseInt(new String(req.getMultipart("index")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim());
+						statement.execute("DELETE FROM cardInfoEntry WHERE id=" + index);
+						rebuildCardInfo(cardInfo, card, statement);
+						req.respondWithHeaders1(
+							HttpStatus.TEMPORARY_REDIRECT_302,
+							"Redirecting you to <a href=\"/admin/card/extra?name=" + card + "\">/admin/card/extra?name=" + card + "</a>",
+							"Location: /admin/card/extra?name=" + card
+						);
+					}
+					catch (SQLException ex)
+					{
+						req.respond("Internal error: " + ex.getMessage());
+					}
+				}
+				else if (req.matches(HttpVerb.POST, "/admin/card/extra/edit"))
+				{
+					try
+					{
+						String card = new String(req.getMultipart("card")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
+						String value = new String(req.getMultipart("value")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
+						int index = Integer.parseInt(new String(req.getMultipart("index")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim());
+						statement.execute("UPDATE cardInfoEntry SET value = '" + value + "' WHERE id=" + index);
+						rebuildCardInfo(cardInfo, card, statement);
+						req.respondWithHeaders1(
+							HttpStatus.TEMPORARY_REDIRECT_302,
+							"Redirecting you to <a href=\"/admin/card/extra?name=" + card + "\">/admin/card/extra?name=" + card + "</a>",
+							"Location: /admin/card/extra?name=" + card
+						);
+					}
+					catch (SQLException ex)
+					{
+						req.respond("Internal error: " + ex.getMessage());
+					}
 				}
 				else if (req.matches(HttpVerb.GET, "/admin/infofield"))
 				{
@@ -818,7 +902,19 @@ public final class ExampleBot
 		System.out.println(" . . .");
 		return combined;
 	}
-	
+	public static void rebuildCardInfo(Map<String,HashMap<String,ArrayList<String>>> cardInfo, String card, Statement statement) throws SQLException
+	{
+		HashMap<String,ArrayList<String>> inf = cardInfo.get(card);
+		inf.clear();
+		ResultSet cardInfoRS = statement.executeQuery("SELECT * FROM cardInfoEntry WHERE card = '" + card  + "'");
+		while (cardInfoRS.next())
+		{
+			String field = cardInfoRS.getString("field");
+			if (inf.get(field) == null)
+				inf.put(field, new ArrayList<String>());
+			inf.get(field).add(cardInfoRS.getString("value"));
+		}
+	}
 	// asol.jpeg --> Aurelion Sol
 	public static String getCardDisplayName(String rawName)
 	{
