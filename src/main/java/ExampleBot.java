@@ -357,7 +357,7 @@ public final class ExampleBot
 						ResultSet cardInfoFRS = statement.executeQuery("SELECT keyName FROM cardInfoField");
 						while (cardInfoFRS.next())
 						{
-							optionsString += "<option value=\"" + cardInfoFRS.getString("keyName") + "\">";
+							optionsString += "<option value=\"" + cardInfoFRS.getString("keyName") + "\">" + cardInfoFRS.getString("questionFormat") + "</option>";
 						}
 						optionsString += "</select>";
 						ResultSet cardInfoERS = statement.executeQuery("SELECT id, field, value FROM cardInfoEntry WHERE card = '" + card + "'");
