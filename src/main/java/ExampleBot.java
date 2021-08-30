@@ -168,6 +168,7 @@ public final class ExampleBot
 						+ "<a href=\"/admin/settings\">General Settings</a><br>"
 						+ "<a href=\"/admin/cardpacks\">View / edit card packs</a><br>"
 						+ "<a href=\"/admin/cards\">View / edit cards</a><br>"
+						+ "<a href=\"/admin/infofield\">View / edit card extra info field options</a>"
 						+ "<a href=\"https://discordapp.com/api/oauth2/authorize?client_id=" + botClientId + "&permissions=243336208192&scope=bot\">Add drops bot to a Discord server</a><br>"
 					+ "</body>");
 					return;
@@ -392,7 +393,7 @@ public final class ExampleBot
 							"Location: /admin/card/extra?name=" + card
 						);
 					}
-					catch (SQLException ex)
+					catch (SQLException|ArrayIndexOutOfBoundsException ex)
 					{
 						req.respond("Internal error: " + ex.getMessage());
 					}
@@ -438,13 +439,78 @@ public final class ExampleBot
 				}
 				else if (req.matches(HttpVerb.GET, "/admin/infofield"))
 				{
-					// TODO
-					req.respond(HttpStatus.NOT_FOUND_404);
+					try
+					{
+						ResultSet cardInfoRS = statement.executeQuery("SELECT keyName,questionFormat FROM cardInfoField");
+						String ret = "<body>";
+						ret += "<form enctype=\"multipart/form-data\" action=\"/admin/infofield/add\" method=\"post\">Key: <input name=\"keyName\"> QuestionFormat: <input name=\"questionFormat\"><input type=\"submit\" value=\"add entry\"/></form>";
+						while (cardInfoRS.next())
+						{
+							String hiddenInputs = "<input type=\"hidden\" value=\"" + cardInfoRS.getString("keyName") + "\" name=\"keyName\"/>";
+							ret += "<form enctype=\"multipart/form-data\" action=\"/admin/infofield/remove\" method=\"post\"><input type=\"submit\" value=\"remove entry\">" + hiddenInputs + "</form>";
+							ret += "Key: " + cardInfoRS.getString("keyName") + " <form enctype=\"multipart/form-data\" action=\"/admin/infofield/edit\" method=\"post\">QuestionFormat: <input name=\"questionFormat\" value=\"" + cardInfoRS.getString("questionFormat") + "\">" + hiddenInputs + "<input type=\"submit\" value=\"update\"/></form>";
+							ret += "<br>";
+						}
+						ret += "</body>";
+						req.respond(ret);
+					}
+					catch (SQLException ex)
+					{
+						req.respond("Internal error: " + ex.getMessage());
+					}
 				}
-				else if (req.matches(HttpVerb.POST, "/admin/infofield"))
+				else if (req.matches(HttpVerb.POST, "/admin/infofield/add"))
 				{
-					// TODO
-					req.respond(HttpStatus.NOT_FOUND_404);
+					try
+					{
+						String keyName = new String(req.getMultipart("keyName")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
+						String questionFormat = new String(req.getMultipart("questionFormat")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
+						statement.execute("INSERT INTO cardInfoField (keyName, questionFormat) VALUES ('" + keyName + "','" + questionFormat + "')");
+						req.respondWithHeaders1(
+							HttpStatus.TEMPORARY_REDIRECT_302,
+							"Redirecting you to <a href=\"/admin/infofield\">/admin/infofield</a>",
+							"Location: /admin/infofield"
+						);
+					}
+					catch (SQLException|ArrayIndexOutOfBoundsException ex)
+					{
+						req.respond("Internal error: " + ex.getMessage());
+					}
+				}
+				else if (req.matches(HttpVerb.POST, "/admin/infofield/remove"))
+				{
+					try
+					{
+						String keyName = new String(req.getMultipart("keyName")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
+						statement.execute("DELETE FROM cardInfoField WHERE keyName = '" + keyName + "'");
+						req.respondWithHeaders1(
+							HttpStatus.TEMPORARY_REDIRECT_302,
+							"Redirecting you to <a href=\"/admin/infofield\">/admin/infofield</a>",
+							"Location: /admin/infofield"
+						);
+					}
+					catch (SQLException|ArrayIndexOutOfBoundsException ex)
+					{
+						req.respond("Internal error: " + ex.getMessage());
+					}
+				}
+				else if (req.matches(HttpVerb.POST, "/admin/infofield/edit"))
+				{
+					try
+					{
+						String keyName = new String(req.getMultipart("keyName")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
+						String questionFormat = new String(req.getMultipart("questionFormat")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
+						statement.execute("UPDATE cardInfoField SET questionFormat = '" + questionFormat + "' WHERE keyName = '" + keyName + "'");
+						req.respondWithHeaders1(
+							HttpStatus.TEMPORARY_REDIRECT_302,
+							"Redirecting you to <a href=\"/admin/infofield\">/admin/infofield</a>",
+							"Location: /admin/infofield"
+						);
+					}
+					catch (SQLException|ArrayIndexOutOfBoundsException ex)
+					{
+						req.respond("Internal error: " + ex.getMessage());
+					}
 				}
 				else if (req.matches(HttpVerb.GET, "/admin/settings"))
 				{
