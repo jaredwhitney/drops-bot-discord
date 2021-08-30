@@ -56,7 +56,7 @@ public final class ExampleBot
 		statement.execute("CREATE TABLE IF NOT EXISTS settings (dropNumCards int NOT NULL, dropCooldownMillis int NOT NULL, dungeonOptions int NOT NULL, dungeonCooldownMillis int NOT NULL, serverPort int NOT NULL, botPrefix string NOT NULL, siteUrl string NOT NULL, cardsFolder string NOT NULL, authHandler string NOT NULL, botToken string NOT NULL, botClientId string NOT NULL)");
 		if (statement.executeQuery("SELECT COUNT(*) as count FROM settings").getInt("count") == 0)
 		{
-			statement.execute("INSERT INTO settings (dropNumCards, dropCooldownMillis, dungeonOptions, dungeonCooldownMillis, serverPort, botPrefix, siteUrl, cardsFolder, authHandler, botToken, botClientId) VALUES (3, 600000, 4, 600000, 28002, ',', 'drops.0k.rip', '/www/drops.0k.rip/card/', 'auth.aws1.0k.rip', 'INVALID_TOKEN_REPLACE_ME', 'INVALID_CLIENT_ID_REPLACE_ME')");
+			statement.executeUpdate("INSERT INTO settings (dropNumCards, dropCooldownMillis, dungeonOptions, dungeonCooldownMillis, serverPort, botPrefix, siteUrl, cardsFolder, authHandler, botToken, botClientId) VALUES (3, 600000, 4, 600000, 28002, ',', 'drops.0k.rip', '/www/drops.0k.rip/card/', 'auth.aws1.0k.rip', 'INVALID_TOKEN_REPLACE_ME', 'INVALID_CLIENT_ID_REPLACE_ME')");
 		}
 		
 		ResultSet settingsRS = statement.executeQuery("SELECT * FROM settings LIMIT 1");
@@ -227,7 +227,7 @@ public final class ExampleBot
 					try
 					{
 						String cardPackName = new String(req.getMultipart("packName")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
-						statement.execute("INSERT INTO cardpack (packName) VALUES ('" + cardPackName + "')");
+						statement.executeUpdate("INSERT INTO cardpack (packName) VALUES ('" + cardPackName + "')");
 						cardPacks.put(cardPackName, new ArrayList<String>());
 						req.respondWithHeaders1(
 							HttpStatus.TEMPORARY_REDIRECT_302,
@@ -294,7 +294,7 @@ public final class ExampleBot
 						String displayName = new String(req.getMultipart("displayName")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
 						if (displayName.length() == 0)
 							displayName = SysUtils.toTitleCase(rawName);
-						statement.execute("INSERT INTO cardDefinition (imageFilename, displayName, displayDescription, packName) VALUES ('"
+						statement.executeUpdate("INSERT INTO cardDefinition (imageFilename, displayName, displayDescription, packName) VALUES ('"
 							+ rawName + "',"
 							+ "'" + displayName + "',"
 							+ "'" + displayDescription + "',"
@@ -383,7 +383,7 @@ public final class ExampleBot
 						String card = new String(req.getMultipart("card")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
 						String key = new String(req.getMultipart("key")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
 						String value = new String(req.getMultipart("value")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
-						statement.execute("INSERT INTO cardInfoEntry (card, field, value) VALUES ('" + card + "','" + key + "','" + value + "')");
+						statement.executeUpdate("INSERT INTO cardInfoEntry (card, field, value) VALUES ('" + card + "','" + key + "','" + value + "')");
 						if (cardInfo.get(card).get(key) == null)
 							cardInfo.get(card).put(key, new ArrayList<String>());
 						cardInfo.get(card).get(key).add(value);
@@ -404,7 +404,7 @@ public final class ExampleBot
 					{
 						String card = new String(req.getMultipart("card")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
 						int index = Integer.parseInt(new String(req.getMultipart("index")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim());
-						statement.execute("DELETE FROM cardInfoEntry WHERE id=" + index);
+						statement.executeUpdate("DELETE FROM cardInfoEntry WHERE id=" + index);
 						rebuildCardInfo(cardInfo, card, statement);
 						req.respondWithHeaders1(
 							HttpStatus.TEMPORARY_REDIRECT_302,
@@ -424,7 +424,7 @@ public final class ExampleBot
 						String card = new String(req.getMultipart("card")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
 						String value = new String(req.getMultipart("value")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
 						int index = Integer.parseInt(new String(req.getMultipart("index")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim());
-						statement.execute("UPDATE cardInfoEntry SET value = '" + value + "' WHERE id=" + index);
+						statement.executeUpdate("UPDATE cardInfoEntry SET value = '" + value + "' WHERE id=" + index);
 						rebuildCardInfo(cardInfo, card, statement);
 						req.respondWithHeaders1(
 							HttpStatus.TEMPORARY_REDIRECT_302,
@@ -465,7 +465,7 @@ public final class ExampleBot
 					{
 						String keyName = new String(req.getMultipart("keyName")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
 						String questionFormat = new String(req.getMultipart("questionFormat")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
-						statement.execute("INSERT INTO cardInfoField (keyName, questionFormat) VALUES ('" + keyName + "','" + questionFormat + "')");
+						statement.executeUpdate("INSERT INTO cardInfoField (keyName, questionFormat) VALUES ('" + keyName + "','" + questionFormat + "')");
 						req.respondWithHeaders1(
 							HttpStatus.TEMPORARY_REDIRECT_302,
 							"Redirecting you to <a href=\"/admin/infofield\">/admin/infofield</a>",
@@ -482,7 +482,7 @@ public final class ExampleBot
 					try
 					{
 						String keyName = new String(req.getMultipart("keyName")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
-						statement.execute("DELETE FROM cardInfoField WHERE keyName = '" + keyName + "'");
+						statement.executeUpdate("DELETE FROM cardInfoField WHERE keyName = '" + keyName + "'");
 						req.respondWithHeaders1(
 							HttpStatus.TEMPORARY_REDIRECT_302,
 							"Redirecting you to <a href=\"/admin/infofield\">/admin/infofield</a>",
@@ -500,7 +500,7 @@ public final class ExampleBot
 					{
 						String keyName = new String(req.getMultipart("keyName")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
 						String questionFormat = new String(req.getMultipart("questionFormat")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
-						statement.execute("UPDATE cardInfoField SET questionFormat = '" + questionFormat + "' WHERE keyName = '" + keyName + "'");
+						statement.executeUpdate("UPDATE cardInfoField SET questionFormat = '" + questionFormat + "' WHERE keyName = '" + keyName + "'");
 						req.respondWithHeaders1(
 							HttpStatus.TEMPORARY_REDIRECT_302,
 							"Redirecting you to <a href=\"/admin/infofield\">/admin/infofield</a>",
@@ -557,7 +557,7 @@ public final class ExampleBot
 						int dungeonCooldownMillisCandidate = Integer.parseInt(new String(req.getMultipart("dungeonCooldownMillis")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim());
 						String botPrefixCandidate = new String(req.getMultipart("botPrefix")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
 						String botClientIdCandidate = new String(req.getMultipart("botClientId")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
-						statement.execute("UPDATE settings SET "
+						statement.executeUpdate("UPDATE settings SET "
 							+ "dropNumCards = " + dropNumCardsCandidate + ","
 							+ "dropCooldownMillis = " + dropCooldownMillisCandidate + ","
 							+ "dungeonOptions = " + dungeonNumOptionsCandidate + ","
@@ -832,7 +832,7 @@ public final class ExampleBot
 							String[] cardparts = cardinfo.split(""+(char)4);
 							try
 							{
-								statement.execute("INSERT INTO cardInstance(rawName, id, level, stars, owner) VALUES ('" + cardparts[0] + "', '" + cardparts[1] + "', '" + cardparts[3] + "', '" + cardparts[2] + "', '" + author + "')");
+								statement.executeUpdate("INSERT INTO cardInstance(rawName, id, level, stars, owner) VALUES ('" + cardparts[0] + "', '" + cardparts[1] + "', '" + cardparts[3] + "', '" + cardparts[2] + "', '" + author + "')");
 								dropChannel.get(author).createMessage("Enjoy your new " + cardparts[2] + " star " + getCardDisplayName(cardparts[0]) + " (level " + cardparts[3] + ")").subscribe();
 								dropWaiting.remove(author);
 								if (inventory.get(author) == null)
@@ -862,7 +862,7 @@ public final class ExampleBot
 								try
 								{
 									String[] cardparts = genCard(cardInfo);
-									statement.execute("INSERT INTO cardInstance(rawName, id, level, stars, owner) VALUES ('" + cardparts[0] + "', '" + cardparts[1] + "', '" + cardparts[3] + "', '" + cardparts[2] + "', '" + author + "')");
+									statement.executeUpdate("INSERT INTO cardInstance(rawName, id, level, stars, owner) VALUES ('" + cardparts[0] + "', '" + cardparts[1] + "', '" + cardparts[3] + "', '" + cardparts[2] + "', '" + author + "')");
 									if (inventory.get(author) == null)
 										inventory.put(author, new ArrayList<String>());
 									cardInfo = cardparts[0] + ((char)4) + cardparts[1] + ((char)4) + cardparts[2] + ((char)4) + cardparts[3];
