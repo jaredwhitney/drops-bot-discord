@@ -354,7 +354,7 @@ public final class ExampleBot
 						String card = req.getParam("name")[0];
 						String ret = "<body>";
 						String optionsString = "<select name=\"key\">";
-						ResultSet cardInfoFRS = statement.executeQuery("SELECT keyName FROM cardInfoField");
+						ResultSet cardInfoFRS = statement.executeQuery("SELECT keyName, questionFormat FROM cardInfoField");
 						while (cardInfoFRS.next())
 						{
 							optionsString += "<option value=\"" + cardInfoFRS.getString("keyName") + "\">" + cardInfoFRS.getString("questionFormat") + "</option>";
