@@ -368,6 +368,7 @@ public final class ExampleBot
 							ret += cardInfoERS.getString("key") + ": <form enctype=\"multipart/form-data\" action=\"/admin/card/extra/edit\" method=\"post\"><input name=\"value\" value=\"" + cardInfoERS.getString("value") + "\">" + hiddenInputs + "<input type=\"submit\" value=\"update\"/></form>";
 							ret += "<br>";
 						}
+						req.respond(ret);
 					}
 					catch (SQLException ex)
 					{
