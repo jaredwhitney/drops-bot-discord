@@ -82,10 +82,12 @@ public final class ExampleBot
 			System.out.println("Loaded info for cardpack " + packName);
 		}
 		
+		final ArrayList<String> cards = new ArrayList<String>();
 		ResultSet cardDefinitionRS = statement.executeQuery("SELECT * FROM cardDefinition");
 		while (cardDefinitionRS.next())
 		{
 			String cardID = cardDefinitionRS.getString("imageFilename");
+			cards.add(cardID);
 			HashMap<String,ArrayList<String>> inf = new HashMap<String,ArrayList<String>>();
 			cardInfo.put(cardID, inf);
 			String displayName = cardDefinitionRS.getString("displayName");
@@ -112,7 +114,6 @@ public final class ExampleBot
 			
 			System.out.println("Loaded definition for card " + getCardDisplayName(cardID));
 		}
-		final ArrayList<String> cards = new ArrayList<String>(cardInfo.keySet());
 		
 		ResultSet cardInstanceRS = statement.executeQuery("SELECT * FROM cardInstance");
 		while (cardInstanceRS.next())
@@ -257,7 +258,7 @@ public final class ExampleBot
 				else if (req.matches(HttpVerb.GET, "/admin/cards"))
 				{
 					String resp = "<body>";
-					for (String card : cardInfo.keySet())
+					for (String card : cards)
 					{
 						resp += "<a href=\"/admin/card?name=" + card + "\">" + getCardDisplayName(card) + "</a><br>";
 					}
