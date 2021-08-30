@@ -230,7 +230,7 @@ public final class ExampleBot
 				{
 					try
 					{
-						String cardPackName = new String(req.getMultipart("botPrefix")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
+						String cardPackName = new String(req.getMultipart("packName")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
 						statement.execute("INSERT INTO cardpack (packName) VALUES ('" + cardPackName + "')");
 						cardPacks.put(cardPackName, new ArrayList<String>());
 						req.respondWithHeaders1(
