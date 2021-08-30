@@ -231,7 +231,7 @@ public final class ExampleBot
 				{
 					try
 					{
-						System.out.println(Arrays.toString(req.multiparts.keySet()));
+						System.out.println(Arrays.toString(req.multiparts.keySet().toArray(String[]::new)));
 						String cardPackName = new String(req.getMultipart("packName")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
 						statement.execute("INSERT INTO cardpack (packName) VALUES ('" + cardPackName + "')");
 						cardPacks.put(cardPackName, new ArrayList<String>());
