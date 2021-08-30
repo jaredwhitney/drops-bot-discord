@@ -110,7 +110,7 @@ public final class ExampleBot
 			inf.put("category", dnCAT);
 			cardPacks.get(packName).add(cardID);
 			
-			rebuildCardInfo(cardInfo, cardID, statement);
+			rebuildCardInfo(cardInfo, cardID, connection.createStatement());
 			
 			System.out.println("Loaded definition for card " + getCardDisplayName(cardID));
 		}
@@ -406,7 +406,7 @@ public final class ExampleBot
 						String card = new String(req.getMultipart("card")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
 						int index = Integer.parseInt(new String(req.getMultipart("index")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim());
 						statement.executeUpdate("DELETE FROM cardInfoEntry WHERE id=" + index);
-						rebuildCardInfo(cardInfo, card, statement);
+						rebuildCardInfo(cardInfo, card, connection.createStatement());
 						req.respondWithHeaders1(
 							HttpStatus.TEMPORARY_REDIRECT_302,
 							"Redirecting you to <a href=\"/admin/card/extra?name=" + card + "\">/admin/card/extra?name=" + card + "</a>",
@@ -426,7 +426,7 @@ public final class ExampleBot
 						String value = new String(req.getMultipart("value")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
 						int index = Integer.parseInt(new String(req.getMultipart("index")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim());
 						statement.executeUpdate("UPDATE cardInfoEntry SET value = '" + value + "' WHERE id=" + index);
-						rebuildCardInfo(cardInfo, card, statement);
+						rebuildCardInfo(cardInfo, card, connection.createStatement());
 						req.respondWithHeaders1(
 							HttpStatus.TEMPORARY_REDIRECT_302,
 							"Redirecting you to <a href=\"/admin/card/extra?name=" + card + "\">/admin/card/extra?name=" + card + "</a>",
