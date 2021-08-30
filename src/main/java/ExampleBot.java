@@ -219,7 +219,7 @@ public final class ExampleBot
 				else if (req.matches(HttpVerb.GET, "/admin/cardpacks/add"))
 				{
 					String resp = "<body>"
-						+ "<form type=\"multipart/form-data\" action=\"/admin/cardpacks/add\" method=\"post\">"
+						+ "<form enctype=\"multipart/form-data\" action=\"/admin/cardpacks/add\" method=\"post\">"
 							+ "Cardpack Name: <input name=\"packName\"/><br>"
 							+ "<input type=\"submit\" value=\"Create card pack!\">"
 						+ "</form>"
@@ -231,7 +231,6 @@ public final class ExampleBot
 				{
 					try
 					{
-						System.out.println(Arrays.toString(req.multiparts.keySet().toArray(String[]::new)));
 						String cardPackName = new String(req.getMultipart("packName")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
 						statement.execute("INSERT INTO cardpack (packName) VALUES ('" + cardPackName + "')");
 						cardPacks.put(cardPackName, new ArrayList<String>());
