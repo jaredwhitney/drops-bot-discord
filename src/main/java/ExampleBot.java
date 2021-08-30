@@ -177,6 +177,7 @@ public final class ExampleBot
 						+ "<a href=\"/admin/cards\">View / edit cards</a><br>"
 						+ "<a href=\"https://discordapp.com/api/oauth2/authorize?client_id=" + botClientId + "&permissions=243336208192&scope=bot\">Add drops bot to a Discord server</a><br>"
 					+ "</body>");
+					return;
 				}
 				if (!auth.enforceValidCredentials("drops-admin"))
 					return;
@@ -230,6 +231,7 @@ public final class ExampleBot
 				{
 					try
 					{
+						System.out.println(Arrays.toString(req.multiparts.keySet()));
 						String cardPackName = new String(req.getMultipart("packName")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
 						statement.execute("INSERT INTO cardpack (packName) VALUES ('" + cardPackName + "')");
 						cardPacks.put(cardPackName, new ArrayList<String>());
