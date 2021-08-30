@@ -330,11 +330,11 @@ public final class ExampleBot
 					for (String key : getCardDungeonCategories(card))
 						cardDGInfo += key + ": " + cardInfo.get(card).get(key) + "<br>";
 					req.respond("<body>"
-						+ "<img src=/card/" + card + "/><br>"
+						+ "<img src=\"/card/" + card + "\"/><br>"
 						+ "<h2>General Info</h2>"
 						+ "Display Name: " + getCardDisplayName(card) + "<br>"
 						+ "Display Description: " + getCardDescription(card) + "<br>"
-						+ "Card Pack: " + cardInfo.get(card).get("category") + "<br>"
+						+ "Card Pack: " + cardInfo.get(card).get("category")[0] + "<br>"
 						+ "<h2>Dungeon Info</h2>"
 						+ cardDGInfo
 						+ "</body>"
