@@ -488,306 +488,327 @@ public final class ExampleBot
 			final GatewayDiscordClient gateway = client.login().block();
 			
 			gateway.on(MessageCreateEvent.class).subscribe(event -> {
-				final Message message = event.getMessage();
-				final String command = message.getContent().split(" ")[0].trim();
-				final GuildMessageChannel discordChannelObj = (GuildMessageChannel)message.getChannel().block();
-				final var discordUserObj = message.getAuthor().orElseThrow();
-				final var discordGuildObj = discordChannelObj.getGuild().block().getId();
-				final var discordMemberObj = discordUserObj.asMember(discordGuildObj).block();
-				final String discordUserId = discordUserObj.getId().asString();
-				final String nickname = discordMemberObj.getDisplayName();
-				User user = users.get(discordUserId);
-				if (user == null)
+				try
 				{
-					try
+					final Message message = event.getMessage();
+					final String command = message.getContent().split(" ")[0].trim();
+					final GuildMessageChannel discordChannelObj = (GuildMessageChannel)message.getChannel().block();
+					final var discordUserObj = message.getAuthor().orElseThrow();
+					final var discordGuildObj = discordChannelObj.getGuild().block().getId();
+					final var discordMemberObj = discordUserObj.asMember(discordGuildObj).block();
+					final String discordUserId = discordUserObj.getId().asString();
+					final String nickname = discordMemberObj.getDisplayName();
+					User user = users.get(discordUserId);
+					if (user == null)
 					{
-						user = new User();
-						user.userId = discordUserId;
-						user.handleAdd();
-						users.put(user.userId, user);
-					}
-					catch (Exception ex)
-					{
-						discordChannelObj.createMessage("Sorry " + nickname +", I ran into an internal error trying to create your user!\n" + ex.getMessage()).subscribe();
-						return;
-					}
-				}
-				if ("~help".replaceAll("\\~", settings.botPrefix).equalsIgnoreCase(command))
-				{
-					discordChannelObj.createMessage("Commands:\n  ~drop\n  ~inv\n  ~view [id]\n  ~dg\n  ~cd\n  ~help".replaceAll("\\~", settings.botPrefix)).block();
-				}
-				if ("~drop".replaceAll("\\~", settings.botPrefix).equalsIgnoreCase(command))
-				{
-					if (System.currentTimeMillis()-user.lastDropTime < settings.dropCooldownMillis)
-					{
-						discordChannelObj.createMessage("Sorry " + nickname +", you need to wait another " + formatDuration(settings.dropCooldownMillis-(System.currentTimeMillis()-user.lastDropTime)) + " to drop :(").subscribe();
-						return;
-					}
-					user.lastDropTime = System.currentTimeMillis();
-					
-					int numCardsForDrop = settings.dropNumCards;
-					
-					CardDef[] cards = cardDefinitions.values().toArray(CardDef[]::new);
-					String cardStrSend = "";
-					ArrayList<CardDef> cardSend = new ArrayList<CardDef>();
-					for (int i = 0; i < settings.dropNumCards; i++)
-					{
-						CardDef cardDef = cards[(int)(Math.random()*cards.length)];
-						cardStrSend += (i>0?"+":"") + cardDef.imageFilename;
-						cardSend.add(cardDef);
-					}
-					final String cardStrSendFinal = cardStrSend;
-					
-					PendingDropInfo dropInfo = new PendingDropInfo();
-					dropInfo.user = user;
-					dropInfo.nickname = nickname;
-					dropInfo.channel = discordChannelObj;
-					dropInfo.cards = cardSend;
-					dropInfo.cacheKey = cardStrSendFinal;
-					
-					try
-					{
-						BufferedImage combined = stitchImages(cardSend);
-						ByteArrayOutputStream baos = new ByteArrayOutputStream();
-						ImageIO.write(combined, "webp", baos);
-						
-						RenderedImageStorage cachedImage = new RenderedImageStorage();
-						cachedImage.cachedData = baos.toByteArray();
-						renderedImageCache.put(cardStrSendFinal, cachedImage);
-					}
-					catch (Exception ex){ex.printStackTrace();}
-					discordChannelObj.createEmbed(spec -> {
-						var temp = spec.setColor(Color.RED)
-						.setThumbnail(discordUserObj.getAvatarUrl())
-						.setTitle("Drops for " + nickname + ":")
-						.setDescription("Pick a card to keep:");
-						for (int i = 0; i < numCardsForDrop; i++)
+						try
 						{
-							temp = temp.addField("Card " + (i+1), cardSend.get(i).displayName, true);
+							user = new User();
+							user.userId = discordUserId;
+							user.handleAdd();
+							users.put(user.userId, user);
 						}
-						temp.setImage("https://" + settings.siteUrl + "/cardpack?" + cardStrSendFinal)
-						.setFooter("drops?", "https://" + settings.siteUrl + "/img/botprofile.png")
-						.setTimestamp(Instant.now());
-					}).flatMap(msg -> {
-						dropInfo.messageId = ((Message)msg).getId().asString();
-						pendingDropInfo.put(dropInfo.user, dropInfo);
-						var temp = msg.addReaction(ReactionEmoji.unicode(new String(new byte[]{(byte)(0x31),(byte)-17,(byte)-72,(byte)-113,(byte)-30,(byte)-125,(byte)-93})));
-						for (int i = 1; i < numCardsForDrop; i++)
-							temp = temp.then(msg.addReaction(ReactionEmoji.unicode(new String(new byte[]{(byte)(0x31+i),(byte)-17,(byte)-72,(byte)-113,(byte)-30,(byte)-125,(byte)-93}))));
-						return temp;
-					}).subscribe();
-				}
-				if ("~inv".replaceAll("\\~", settings.botPrefix).equalsIgnoreCase(command))
-				{
-					String cardsStr = "";
-					for (CardInst card : user.inventory.values())
-						cardsStr += " - " + card.def.displayName + " [" + card.id + "] (" + card.stars + " stars, level " + card.level + ")\n";
-					discordChannelObj.createMessage(nickname + "'s Inventory:\n" + cardsStr).block();
-				}
-				if ("~view".replaceAll("\\~", settings.botPrefix).equalsIgnoreCase(command))
-				{
-					String id = message.getContent().split(" ")[1].trim();
-					CardInst card = cardInstances.get(id);
-					if (card != null)
-					{
-						discordChannelObj.createEmbed(spec ->
-							spec.setTitle(card.def.displayName)
-							.setDescription(card.def.displayDescription)
-							.addField("ID", card.id, true)
-							.addField("Stars", card.stars+"", true)
-							.addField("Level", card.level+"", true)
-							.setImage("https://" + settings.siteUrl + "/card/" + card.def.imageFilename)
-							.setFooter("drops?", "https://" + settings.siteUrl + "/img/botprofile.png")
-							.setTimestamp(Instant.now())
-						).subscribe();
-					}
-					else
-					{
-						discordChannelObj.createMessage("Sorry " + nickname +", I couldn't find card \"" + id + "\" :(").subscribe();
-					}
-				}
-				if ("~dg".replaceAll("\\~", settings.botPrefix).equalsIgnoreCase(command))
-				{
-					if (System.currentTimeMillis()-user.lastDungeonTime < settings.dungeonCooldownMillis)
-					{
-						discordChannelObj.createMessage("Sorry " + nickname +", you need to wait another " + formatDuration(settings.dungeonCooldownMillis-(System.currentTimeMillis()-user.lastDungeonTime)) + " to attempt a dungeon :(").subscribe();
-						return;
-					}
-					user.lastDungeonTime = System.currentTimeMillis();
-					
-					// If the settings value changes in the middle of this, we don't want it to break things
-					final int numOptionsForDungeon = settings.dungeonOptions;
-					
-					HashMap<CardInfoField, ArrayList<String>> dungeonFieldOptions = new HashMap<CardInfoField, ArrayList<String>>();
-					for (CardInfoField field : cardInfoFields.values())
-					{
-						ArrayList<String> fieldUniqueEntries = new ArrayList<String>();
-						HashMap<String,Boolean> uniqueStore = new HashMap<String,Boolean>();
-						for (CardInfoFieldEntry entry : field.entries.values())
+						catch (Exception ex)
 						{
-							if (uniqueStore.get(entry.value) == null)
-							{
-								fieldUniqueEntries.add(entry.value);
-								uniqueStore.put(entry.value, true);
-							}
+							discordChannelObj.createMessage("Sorry " + nickname +", I ran into an internal error trying to create your user!\n" + ex.getMessage()).subscribe();
+							return;
 						}
-						if (fieldUniqueEntries.size() >= numOptionsForDungeon)
-							dungeonFieldOptions.put(field, fieldUniqueEntries);
 					}
-					
-					if (dungeonFieldOptions.size() > 0)
+					if ("~help".replaceAll("\\~", settings.botPrefix).equalsIgnoreCase(command))
 					{
-						CardInfoField dungeonField = dungeonFieldOptions.keySet().toArray(CardInfoField[]::new)[(int)(Math.random()*dungeonFieldOptions.size())];
-						ArrayList<String> dungeonFieldUniqueValues = dungeonFieldOptions.get(dungeonField);
-						
-						ArrayList<CardDef> cardOptions = new ArrayList<CardDef>();
-						for (CardDef card : cardDefinitions.values())
-							if (card.info.get(dungeonField.keyName) != null && card.info.get(dungeonField.keyName).size() > 0)
-								cardOptions.add(card);
-						CardDef dungeonCard = cardOptions.get((int)(Math.random()*cardOptions.size()));
-						
-						ArrayList<CardInfoFieldEntry> possibleCorrectEntries = dungeonCard.info.get(dungeonField.keyName);
-						CardInfoFieldEntry correctEntry = possibleCorrectEntries.get((int)(Math.random()*possibleCorrectEntries.size()));
-						
-						String[] dungeonValues = new String[numOptionsForDungeon];
-						int correctEntryIndex = -1;
-						Collections.shuffle(dungeonFieldUniqueValues);
-						for (int i = 0; i < dungeonValues.length; i++)
+						discordChannelObj.createMessage("Commands:\n  ~drop\n  ~inv\n  ~view [id]\n  ~dg\n  ~cd\n  ~help".replaceAll("\\~", settings.botPrefix)).block();
+					}
+					if ("~drop".replaceAll("\\~", settings.botPrefix).equalsIgnoreCase(command))
+					{
+						if (System.currentTimeMillis()-user.lastDropTime < settings.dropCooldownMillis)
 						{
-							dungeonValues[i] = dungeonFieldUniqueValues.get((int)(Math.random()*dungeonFieldUniqueValues.size()));
-							if (dungeonValues[i].equals(correctEntry.value))
-								correctEntryIndex = i;
+							discordChannelObj.createMessage("Sorry " + nickname +", you need to wait another " + formatDuration(settings.dropCooldownMillis-(System.currentTimeMillis()-user.lastDropTime)) + " to drop :(").subscribe();
+							return;
 						}
-						if (correctEntryIndex < 0)
+						user.lastDropTime = System.currentTimeMillis();
+						
+						int numCardsForDrop = settings.dropNumCards;
+						
+						CardDef[] cards = cardDefinitions.values().toArray(CardDef[]::new);
+						if (cards.length == 0)
 						{
-							correctEntryIndex = (int)(Math.random()*dungeonValues.length);
-							dungeonValues[correctEntryIndex] = correctEntry.value;
+							discordChannelObj.createMessage("Sorry " + nickname + ", I don't have any cards to drop yet!\nAsk an admin to add some using the admin panel at https://" + settings.siteUrl + "/admin/cards");
 						}
 						
-						PendingDungeonInfo dungeonInfo = new PendingDungeonInfo();
-						dungeonInfo.user = user;
-						dungeonInfo.nickname = nickname;
-						dungeonInfo.channel = discordChannelObj;
-						dungeonInfo.correctEntryIndex = correctEntryIndex;
-						dungeonInfo.card = dungeonCard;
+						String cardStrSend = "";
+						ArrayList<CardDef> cardSend = new ArrayList<CardDef>();
+						for (int i = 0; i < settings.dropNumCards; i++)
+						{
+							CardDef cardDef = cards[(int)(Math.random()*cards.length)];
+							cardStrSend += (i>0?"+":"") + cardDef.imageFilename;
+							cardSend.add(cardDef);
+						}
+						final String cardStrSendFinal = cardStrSend;
 						
+						PendingDropInfo dropInfo = new PendingDropInfo();
+						dropInfo.user = user;
+						dropInfo.nickname = nickname;
+						dropInfo.channel = discordChannelObj;
+						dropInfo.cards = cardSend;
+						dropInfo.cacheKey = cardStrSendFinal;
+						
+						try
+						{
+							BufferedImage combined = stitchImages(cardSend);
+							ByteArrayOutputStream baos = new ByteArrayOutputStream();
+							ImageIO.write(combined, "webp", baos);
+							
+							RenderedImageStorage cachedImage = new RenderedImageStorage();
+							cachedImage.cachedData = baos.toByteArray();
+							renderedImageCache.put(cardStrSendFinal, cachedImage);
+						}
+						catch (Exception ex){ex.printStackTrace();}
 						discordChannelObj.createEmbed(spec -> {
 							var temp = spec.setColor(Color.RED)
-							.setThumbnail(message.getAuthor().orElseThrow(null).getAvatarUrl())
-							.setTitle("Dungeon for " + nickname + ":")
-							.setDescription(dungeonCard.displayName + " - " + dungeonField.questionFormat);
-							for (int i = 0; i < dungeonValues.length; i++)
+							.setThumbnail(discordUserObj.getAvatarUrl())
+							.setTitle("Drops for " + nickname + ":")
+							.setDescription("Pick a card to keep:");
+							for (int i = 0; i < numCardsForDrop; i++)
 							{
-								temp = temp.addField(new String(new byte[]{(byte)(0x31+i),(byte)-17,(byte)-72,(byte)-113,(byte)-30,(byte)-125,(byte)-93}), dungeonValues[i], true);
+								temp = temp.addField("Card " + (i+1), cardSend.get(i).displayName, true);
 							}
-							temp.setImage("https://" + settings.siteUrl + "/card/" + dungeonCard.imageFilename)
+							temp.setImage("https://" + settings.siteUrl + "/cardpack?" + cardStrSendFinal)
 							.setFooter("drops?", "https://" + settings.siteUrl + "/img/botprofile.png")
 							.setTimestamp(Instant.now());
 						}).flatMap(msg -> {
-							dungeonInfo.messageId = ((Message)msg).getId().asString();
-							pendingDungeonInfo.put(dungeonInfo.user, dungeonInfo);
+							dropInfo.messageId = ((Message)msg).getId().asString();
+							pendingDropInfo.put(dropInfo.user, dropInfo);
 							var temp = msg.addReaction(ReactionEmoji.unicode(new String(new byte[]{(byte)(0x31),(byte)-17,(byte)-72,(byte)-113,(byte)-30,(byte)-125,(byte)-93})));
-							for (int i = 1; i < dungeonValues.length; i++)
+							for (int i = 1; i < numCardsForDrop; i++)
 								temp = temp.then(msg.addReaction(ReactionEmoji.unicode(new String(new byte[]{(byte)(0x31+i),(byte)-17,(byte)-72,(byte)-113,(byte)-30,(byte)-125,(byte)-93}))));
 							return temp;
 						}).subscribe();
 					}
-					else
+					if ("~inv".replaceAll("\\~", settings.botPrefix).equalsIgnoreCase(command))
 					{
-						discordChannelObj.createMessage("Sorry " + nickname + ", I don't have enough card info to create dungeons with the specified option number of " + settings.dungeonOptions + ".\nAsk an admin to add more card info using the admin panel at https://" + settings.siteUrl + "/admin/cards or lower the dungeon option number.");
+						String cardsStr = "";
+						for (CardInst card : user.inventory.values())
+							cardsStr += " - " + card.def.displayName + " [" + card.id + "] (" + card.stars + " stars, level " + card.level + ")\n";
+						discordChannelObj.createMessage(nickname + "'s Inventory:\n" + cardsStr).block();
 					}
-					
+					if ("~view".replaceAll("\\~", settings.botPrefix).equalsIgnoreCase(command))
+					{
+						String id = message.getContent().split(" ")[1].trim();
+						CardInst card = cardInstances.get(id);
+						if (card != null)
+						{
+							discordChannelObj.createEmbed(spec ->
+								spec.setTitle(card.def.displayName)
+								.setDescription(card.def.displayDescription)
+								.addField("ID", card.id, true)
+								.addField("Stars", card.stars+"", true)
+								.addField("Level", card.level+"", true)
+								.setImage("https://" + settings.siteUrl + "/card/" + card.def.imageFilename)
+								.setFooter("drops?", "https://" + settings.siteUrl + "/img/botprofile.png")
+								.setTimestamp(Instant.now())
+							).subscribe();
+						}
+						else
+						{
+							discordChannelObj.createMessage("Sorry " + nickname +", I couldn't find card \"" + id + "\" :(").subscribe();
+						}
+					}
+					if ("~dg".replaceAll("\\~", settings.botPrefix).equalsIgnoreCase(command))
+					{
+						if (System.currentTimeMillis()-user.lastDungeonTime < settings.dungeonCooldownMillis)
+						{
+							discordChannelObj.createMessage("Sorry " + nickname +", you need to wait another " + formatDuration(settings.dungeonCooldownMillis-(System.currentTimeMillis()-user.lastDungeonTime)) + " to attempt a dungeon :(").subscribe();
+							return;
+						}
+						user.lastDungeonTime = System.currentTimeMillis();
+						
+						// If the settings value changes in the middle of this, we don't want it to break things
+						final int numOptionsForDungeon = settings.dungeonOptions;
+						
+						HashMap<CardInfoField, ArrayList<String>> dungeonFieldOptions = new HashMap<CardInfoField, ArrayList<String>>();
+						for (CardInfoField field : cardInfoFields.values())
+						{
+							ArrayList<String> fieldUniqueEntries = new ArrayList<String>();
+							HashMap<String,Boolean> uniqueStore = new HashMap<String,Boolean>();
+							for (CardInfoFieldEntry entry : field.entries.values())
+							{
+								if (uniqueStore.get(entry.value) == null)
+								{
+									fieldUniqueEntries.add(entry.value);
+									uniqueStore.put(entry.value, true);
+								}
+							}
+							if (fieldUniqueEntries.size() >= numOptionsForDungeon)
+								dungeonFieldOptions.put(field, fieldUniqueEntries);
+						}
+						
+						if (dungeonFieldOptions.size() > 0)
+						{
+							CardInfoField dungeonField = dungeonFieldOptions.keySet().toArray(CardInfoField[]::new)[(int)(Math.random()*dungeonFieldOptions.size())];
+							ArrayList<String> dungeonFieldUniqueValues = dungeonFieldOptions.get(dungeonField);
+							
+							ArrayList<CardDef> cardOptions = new ArrayList<CardDef>();
+							for (CardDef card : cardDefinitions.values())
+								if (card.info.get(dungeonField.keyName) != null && card.info.get(dungeonField.keyName).size() > 0)
+									cardOptions.add(card);
+							CardDef dungeonCard = cardOptions.get((int)(Math.random()*cardOptions.size()));
+							
+							ArrayList<CardInfoFieldEntry> possibleCorrectEntries = dungeonCard.info.get(dungeonField.keyName);
+							CardInfoFieldEntry correctEntry = possibleCorrectEntries.get((int)(Math.random()*possibleCorrectEntries.size()));
+							
+							String[] dungeonValues = new String[numOptionsForDungeon];
+							int correctEntryIndex = -1;
+							Collections.shuffle(dungeonFieldUniqueValues);
+							for (int i = 0; i < dungeonValues.length; i++)
+							{
+								dungeonValues[i] = dungeonFieldUniqueValues.get((int)(Math.random()*dungeonFieldUniqueValues.size()));
+								if (dungeonValues[i].equals(correctEntry.value))
+									correctEntryIndex = i;
+							}
+							if (correctEntryIndex < 0)
+							{
+								correctEntryIndex = (int)(Math.random()*dungeonValues.length);
+								dungeonValues[correctEntryIndex] = correctEntry.value;
+							}
+							
+							PendingDungeonInfo dungeonInfo = new PendingDungeonInfo();
+							dungeonInfo.user = user;
+							dungeonInfo.nickname = nickname;
+							dungeonInfo.channel = discordChannelObj;
+							dungeonInfo.correctEntryIndex = correctEntryIndex;
+							dungeonInfo.card = dungeonCard;
+							
+							discordChannelObj.createEmbed(spec -> {
+								var temp = spec.setColor(Color.RED)
+								.setThumbnail(message.getAuthor().orElseThrow(null).getAvatarUrl())
+								.setTitle("Dungeon for " + nickname + ":")
+								.setDescription(dungeonCard.displayName + " - " + dungeonField.questionFormat);
+								for (int i = 0; i < dungeonValues.length; i++)
+								{
+									temp = temp.addField(new String(new byte[]{(byte)(0x31+i),(byte)-17,(byte)-72,(byte)-113,(byte)-30,(byte)-125,(byte)-93}), dungeonValues[i], true);
+								}
+								temp.setImage("https://" + settings.siteUrl + "/card/" + dungeonCard.imageFilename)
+								.setFooter("drops?", "https://" + settings.siteUrl + "/img/botprofile.png")
+								.setTimestamp(Instant.now());
+							}).flatMap(msg -> {
+								dungeonInfo.messageId = ((Message)msg).getId().asString();
+								pendingDungeonInfo.put(dungeonInfo.user, dungeonInfo);
+								var temp = msg.addReaction(ReactionEmoji.unicode(new String(new byte[]{(byte)(0x31),(byte)-17,(byte)-72,(byte)-113,(byte)-30,(byte)-125,(byte)-93})));
+								for (int i = 1; i < dungeonValues.length; i++)
+									temp = temp.then(msg.addReaction(ReactionEmoji.unicode(new String(new byte[]{(byte)(0x31+i),(byte)-17,(byte)-72,(byte)-113,(byte)-30,(byte)-125,(byte)-93}))));
+								return temp;
+							}).subscribe();
+						}
+						else
+						{
+							discordChannelObj.createMessage("Sorry " + nickname + ", I don't have enough card info to create dungeons with the specified option number of " + settings.dungeonOptions + ".\nAsk an admin to add more card info using the admin panel at https://" + settings.siteUrl + "/admin/cards or lower the dungeon option number.");
+						}
+						
+					}
+					if ("~cd".replaceAll("\\~", settings.botPrefix).equalsIgnoreCase(message.getContent().split(" ")[0].trim()))
+					{
+						long dropCd = settings.dropCooldownMillis - (System.currentTimeMillis() - user.lastDropTime);
+						long dungeonCd = settings.dungeonCooldownMillis - (System.currentTimeMillis() - user.lastDungeonTime);
+						discordChannelObj.createEmbed(spec ->
+							spec.setTitle("Cooldowns")
+								.setDescription("for " + nickname)
+								.setThumbnail(discordUserObj.getAvatarUrl())
+								.addField("Drop", (dropCd <= 0 ? "[READY]" : formatDuration(dropCd)), false)
+								.addField("Dungeon", (dungeonCd <= 0 ? "[READY]" : formatDuration(dungeonCd)), true)
+								.setFooter("drops?", "https://" + settings.siteUrl + "/img/botprofile.png")
+								.setTimestamp(Instant.now())
+						).subscribe();
+					}
 				}
-				if ("~cd".replaceAll("\\~", settings.botPrefix).equalsIgnoreCase(message.getContent().split(" ")[0].trim()))
+				catch (Exception ex)
 				{
-					long dropCd = settings.dropCooldownMillis - (System.currentTimeMillis() - user.lastDropTime);
-					long dungeonCd = settings.dungeonCooldownMillis - (System.currentTimeMillis() - user.lastDungeonTime);
-					discordChannelObj.createEmbed(spec ->
-								spec.setTitle("Cooldowns")
-									.setDescription("for " + nickname)
-									.setThumbnail(discordUserObj.getAvatarUrl())
-									.addField("Drop", (dropCd <= 0 ? "[READY]" : formatDuration(dropCd)), false)
-									.addField("Dungeon", (dungeonCd <= 0 ? "[READY]" : formatDuration(dungeonCd)), true)
-									.setFooter("drops?", "https://" + settings.siteUrl + "/img/botprofile.png")
-									.setTimestamp(Instant.now())
-					).subscribe();
+					System.out.println("Uh-oh! Unhandled exception in the Discord bot code.\nNote: Both the bot and the web-server will continue running.");
+					ex.printStackTrace();
 				}
 			});
 			
 			gateway.getEventDispatcher().on(ReactionAddEvent.class).subscribe(
 				event ->
 				{
-					try {
-						event.getEmoji().asUnicodeEmoji().orElseThrow();
-					} catch (Exception ex) {
-						return;
-					}
-					
-					String discordMessageId = event.getMessageId().asString();
-					String discordUserId = event.getUserId().asString();
-					User user = users.get(discordUserId);
-					if (user == null)
-						return;
-					
-					PendingDropInfo dropInfo = pendingDropInfo.get(user);
-					PendingDungeonInfo dungeonInfo = pendingDungeonInfo.get(user);
-					
-					if (dropInfo != null && dropInfo.messageId.equals(discordMessageId))
+					try
 					{
-						CardDef selectedCard = null;
+						try {
+							event.getEmoji().asUnicodeEmoji().orElseThrow();
+						} catch (Exception ex) {
+							return;
+						}
 						
-						String raw = event.getEmoji().asUnicodeEmoji().orElseThrow().getRaw();
-						byte[] b = raw.getBytes();
-						if (b.length == 7 && b[1] == (byte)-17 && b[2] == (byte)-72 && b[3] == (byte)-113 && b[4] == (byte)-30 && b[5] == (byte)-125 && b[6] == (byte)-93)
+						String discordMessageId = event.getMessageId().asString();
+						String discordUserId = event.getUserId().asString();
+						User user = users.get(discordUserId);
+						if (user == null)
+							return;
+						
+						PendingDropInfo dropInfo = pendingDropInfo.get(user);
+						PendingDungeonInfo dungeonInfo = pendingDungeonInfo.get(user);
+						
+						if (dropInfo != null && dropInfo.messageId.equals(discordMessageId))
 						{
-							int ind = raw.charAt(0)-0x31;
-							if (ind >= 0 && ind < dropInfo.cards.size())
-								selectedCard = dropInfo.cards.get(ind);
-						}
-						if (selectedCard != null)
-						{
-							try
+							CardDef selectedCard = null;
+							
+							String raw = event.getEmoji().asUnicodeEmoji().orElseThrow().getRaw();
+							byte[] b = raw.getBytes();
+							if (b.length == 7 && b[1] == (byte)-17 && b[2] == (byte)-72 && b[3] == (byte)-113 && b[4] == (byte)-30 && b[5] == (byte)-125 && b[6] == (byte)-93)
 							{
-								CardInst card = genCard(selectedCard);
-								card.handleAdd();
-								cardInstances.put(card.id, card);
-								dropInfo.channel.createMessage("Enjoy your new " + card.stars + " star " + card.def.displayName + " (level " + card.level + ")").subscribe();
-								pendingDropInfo.remove(dropInfo);
+								int ind = raw.charAt(0)-0x31;
+								if (ind >= 0 && ind < dropInfo.cards.size())
+									selectedCard = dropInfo.cards.get(ind);
 							}
-							catch (SQLException ex)
-							{
-								dropInfo.channel.createMessage("Sorry " + dropInfo.nickname + ", the server encountered an error while processing your request.\n" + ex.getMessage()).subscribe();
-							}
-							renderedImageCache.remove(dropInfo.cacheKey);
-						}
-					}
-					else if (dungeonInfo != null && dungeonInfo.messageId.equals(discordMessageId))
-					{
-						String raw = event.getEmoji().asUnicodeEmoji().orElseThrow().getRaw();
-						byte[] b = raw.getBytes();
-						if (b.length == 7 && b[1] == (byte)-17 && b[2] == (byte)-72 && b[3] == (byte)-113 && b[4] == (byte)-30 && b[5] == (byte)-125 && b[6] == (byte)-93)
-						{
-							pendingDungeonInfo.remove(dungeonInfo);
-							int ind = raw.charAt(0)-0x31+1;
-							if (ind == dungeonInfo.correctEntryIndex)
+							if (selectedCard != null)
 							{
 								try
 								{
-									CardInst card = genCard(dungeonInfo.card);
+									CardInst card = genCard(selectedCard);
 									card.handleAdd();
 									cardInstances.put(card.id, card);
 									dropInfo.channel.createMessage("Enjoy your new " + card.stars + " star " + card.def.displayName + " (level " + card.level + ")").subscribe();
+									pendingDropInfo.remove(dropInfo);
 								}
 								catch (SQLException ex)
 								{
-									event.getChannel().block().createMessage("Sorry " + dungeonInfo.nickname + ", the server encountered an error while processing your request.\n" + ex.getMessage()).subscribe();
+									dropInfo.channel.createMessage("Sorry " + dropInfo.nickname + ", the server encountered an error while processing your request.\n" + ex.getMessage()).subscribe();
 								}
-							}
-							else
-							{
-								dungeonInfo.channel.createMessage("Sorry " + dungeonInfo.nickname + ", that was wrong.\nBetter luck next time <3").subscribe();
+								renderedImageCache.remove(dropInfo.cacheKey);
 							}
 						}
+						else if (dungeonInfo != null && dungeonInfo.messageId.equals(discordMessageId))
+						{
+							String raw = event.getEmoji().asUnicodeEmoji().orElseThrow().getRaw();
+							byte[] b = raw.getBytes();
+							if (b.length == 7 && b[1] == (byte)-17 && b[2] == (byte)-72 && b[3] == (byte)-113 && b[4] == (byte)-30 && b[5] == (byte)-125 && b[6] == (byte)-93)
+							{
+								pendingDungeonInfo.remove(dungeonInfo);
+								int ind = raw.charAt(0)-0x31+1;
+								if (ind == dungeonInfo.correctEntryIndex)
+								{
+									try
+									{
+										CardInst card = genCard(dungeonInfo.card);
+										card.handleAdd();
+										cardInstances.put(card.id, card);
+										dropInfo.channel.createMessage("Enjoy your new " + card.stars + " star " + card.def.displayName + " (level " + card.level + ")").subscribe();
+									}
+									catch (SQLException ex)
+									{
+										event.getChannel().block().createMessage("Sorry " + dungeonInfo.nickname + ", the server encountered an error while processing your request.\n" + ex.getMessage()).subscribe();
+									}
+								}
+								else
+								{
+									dungeonInfo.channel.createMessage("Sorry " + dungeonInfo.nickname + ", that was wrong.\nBetter luck next time <3").subscribe();
+								}
+							}
+						}
+					}
+					catch (Exception ex)
+					{
+						System.out.println("Uh-oh! Unhandled exception in the Discord bot code.\nNote: Both the bot and the web-server will continue running.");
+						ex.printStackTrace();
 					}
 				}
 			);
