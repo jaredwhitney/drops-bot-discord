@@ -977,7 +977,9 @@ class DatabaseManager
 {
 	public static void connectToDatabase() throws SQLException
 	{
-		ExampleBot.connection = DriverManager.getConnection("jdbc:sqlite:" + ExampleBot.DATABASE_LOCATION);
+		Properties properties = new Properties();
+		properties.setProperty("PRAGMA foreign_keys", "ON");
+		ExampleBot.connection = DriverManager.getConnection("jdbc:sqlite:" + ExampleBot.DATABASE_LOCATION, properties);
 	}
 	public static void initAllTables() throws SQLException
 	{
@@ -1416,7 +1418,7 @@ class CardInfoField extends DBEnabledClass
 	void removeFromDatabase() throws SQLException
 	{
 		connection.createStatement().executeUpdate(
-			"DELETE FROM cardInstance"
+			"DELETE FROM cardInfoField"
 			+ " WHERE keyName = '" + keyName + "'"
 		);
 	}
