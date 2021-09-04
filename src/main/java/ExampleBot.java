@@ -802,7 +802,7 @@ public final class ExampleBot
 									card.owner = user;
 									card.handleAdd();
 									cardInstances.put(card.id, card);
-									dropInfo.channel.createMessage("Enjoy your new " + card.stars + " star " + card.def.displayName + " (level " + card.level + ")").subscribe();
+									dropInfo.channel.createMessage("Enjoy your new " + card.stars + " star " + card.def.displayName + " (level " + card.level + ") [id: " + card.id + "]").subscribe();
 									pendingDropInfo.remove(dropInfo);
 								}
 								catch (SQLException ex)
@@ -829,7 +829,7 @@ public final class ExampleBot
 										card.owner = user;
 										card.handleAdd();
 										cardInstances.put(card.id, card);
-										dungeonInfo.channel.createMessage("Enjoy your new " + card.stars + " star " + card.def.displayName + " (level " + card.level + ")").subscribe();
+										dungeonInfo.channel.createMessage("Enjoy your new " + card.stars + " star " + card.def.displayName + " (level " + card.level + ") [id: " + card.id + "]").subscribe();
 									}
 									catch (SQLException ex)
 									{
