@@ -820,7 +820,7 @@ public final class ExampleBot
 							{
 								pendingDungeonInfo.remove(dungeonInfo);
 								int ind = raw.charAt(0)-0x31;
-								System.out.println(nickname + " selected dungeon entry index " + ind)
+								System.out.println(nickname + " selected dungeon entry index " + ind);
 								if (ind == dungeonInfo.correctEntryIndex)
 								{
 									try
