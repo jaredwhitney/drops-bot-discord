@@ -443,6 +443,7 @@ public final class ExampleBot
 						newSettings.dropNumCards = dropNumCardsCandidate;
 						newSettings.dropCooldownMillis = dropCooldownMillisCandidate;
 						newSettings.dungeonOptions = dungeonOptionsCandidate;
+						newSettings.dungeonCooldownMillis = dungeonCooldownMillisCandidate;
 						newSettings.botPrefix = botPrefixCandidate;
 						newSettings.botClientId = botClientIdCandidate;
 						newSettings.botToken = botTokenCandidate;
