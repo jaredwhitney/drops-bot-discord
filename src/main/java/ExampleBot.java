@@ -433,14 +433,27 @@ public final class ExampleBot
 						int dungeonCooldownMillisCandidate = Integer.parseInt(new String(req.getMultipart("dungeonCooldownMillis")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim());
 						String botPrefixCandidate = new String(req.getMultipart("botPrefix")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
 						String botClientIdCandidate = new String(req.getMultipart("botClientId")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
+						String botTokenCandidate = new String(req.getMultipart("botToken")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
+						int serverPortCandidate = Integer.parseInt(new String(req.getMultipart("serverPort")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim());
+						String siteUrlCandidate = new String(req.getMultipart("siteUrl")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
+						String authHandlerCandidate = new String(req.getMultipart("authHandler")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
+						String cardsFolderCandidate = new String(req.getMultipart("cardsFolder")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
 						
-						settings.dropNumCards = dropNumCardsCandidate;
-						settings.dropCooldownMillis = dropCooldownMillisCandidate;
-						settings.dungeonOptions = dungeonOptionsCandidate;
-						settings.botPrefix = botPrefixCandidate;
-						settings.botClientId = botClientIdCandidate;
+						Settings newSettings = new Settings();
+						newSettings.dropNumCards = dropNumCardsCandidate;
+						newSettings.dropCooldownMillis = dropCooldownMillisCandidate;
+						newSettings.dungeonOptions = dungeonOptionsCandidate;
+						newSettings.botPrefix = botPrefixCandidate;
+						newSettings.botClientId = botClientIdCandidate;
+						newSettings.botToken = botTokenCandidate;
+						newSettings.serverPort = serverPortCandidate;
+						newSettings.siteUrl = siteUrlCandidate;
+						newSettings.authHandler = authHandlerCandidate;
+						newSettings.cardsFolder = cardsFolderCandidate;
 						
-						settings.handleUpdate(null);
+						newSettings.handleUpdate(settings);
+						
+						settings = newSettings;
 						
 						req.respondWithHeaders1(
 							HttpStatus.TEMPORARY_REDIRECT_302,
@@ -1530,7 +1543,6 @@ class Settings extends DBEnabledClass
 				+ "botClientId = '" + botClientId + "'"
 		);
 	}
-	void updateInObjects(DBEnabledClass previousGeneric) {}
 	void removeFromDatabase() throws SQLException
 	{
 		throw new RuntimeException("Settings currently cannot be deleted.");
