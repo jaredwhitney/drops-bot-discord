@@ -283,6 +283,9 @@ public final class ExampleBot
 									entry.field = cardInfoFields.get(keyName);
 									entry.value = keyValue;
 									
+									System.out.println(entryOld.id + " -> " + entry.id);
+									System.out.println(entryOld.field + " -> " + entry.field);
+									System.out.println(entryOld.value + " -> " + entry.value);
 									entry.handleUpdate(entryOld);
 									
 									infoFieldPresent.put(entry.id, true);
@@ -1519,6 +1522,7 @@ class CardInfoFieldEntry extends DBEnabledClass
 				break;
 			}
 		}
+		addToObjects();
 	}
 	void removeFromDatabase() throws SQLException
 	{
