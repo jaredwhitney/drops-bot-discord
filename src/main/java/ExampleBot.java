@@ -820,7 +820,7 @@ public final class ExampleBot
 							{
 								pendingDungeonInfo.remove(dungeonInfo);
 								int ind = raw.charAt(0)-0x31;
-								System.out.println(nickname + " selected dungeon entry index " + ind);
+								System.out.println(dungeonInfo.nickname + " selected dungeon entry index " + ind);
 								if (ind == dungeonInfo.correctEntryIndex)
 								{
 									try
@@ -833,6 +833,7 @@ public final class ExampleBot
 									}
 									catch (SQLException ex)
 									{
+										ex.printStackTrace();
 										event.getChannel().block().createMessage("Sorry " + dungeonInfo.nickname + ", the server encountered an error while processing your request.\n" + ex.getMessage()).subscribe();
 									}
 								}
