@@ -213,7 +213,7 @@
 				<select name="cardPack" class="card-pack-selector" id="cardPack" style="box-sizing: border-box;width: 100%;">
 				</select>
 				<button class="p-button--positive">Save changes</button>
-				<button id="newExtraButton" class="p-button">Add extra info</button>
+				<button id="newExtraButton" class="p-button" type="button">Add extra info</button>
 				<input name="imageFilename" id="imageFilename" type="hidden" value="~NULL~"></input>
 			</fieldset>
 			<fieldset id="extra-info-container">
@@ -435,6 +435,7 @@
 			var removeButton = document.createElement('button');
 			removeButton.setAttribute("class","p-button--negative");
 			removeButton.innerHTML = "Delete";
+			removeButton.setAttribute("type", "button");
 			removeButton.setAttribute("style", "margin-bottom: 0px;");
 			removeButton.addEventListener('click', function() {
 				if (this.getAttribute("class") == "p-button--negative") {

@@ -287,7 +287,7 @@ public final class ExampleBot
 								}
 							}
 						}
-						for (ArrayList<CardInfoFieldEntry> entryList : card.info.values())
+						for (ArrayList<CardInfoFieldEntry> entryList : card.info.values().toArray(ArrayList<CardInfoFieldEntry>[]::new))
 						{
 							for (CardInfoFieldEntry entry : entryList)
 							{
