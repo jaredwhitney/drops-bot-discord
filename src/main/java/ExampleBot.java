@@ -244,13 +244,18 @@ public final class ExampleBot
 						for (Map.Entry<String,ArrayList<HttpRequest.Multipart>> multipart : req.multiparts.entrySet())
 						{
 							String key = multipart.getKey();
+							System.out.println("key >" + key + "<");
 							if (key.indexOf("extra-info-key-") > 0)
 							{
 								String keyId = key.substring("extra-info-key-".length());
+								System.out.println("keyId >" + keyId + "<");
 								String keyName = new String(multipart.getValue().get(0).filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
+								System.out.println("keyName >" + keyName + "<");
 								String keyValue = new String(req.multiparts.get("extra-info-value-"+keyId).get(0).filedata, java.nio.charset.StandardCharsets.UTF_8);
+								System.out.println("keyValue >" + keyValue + "<");
 								if (keyId.indexOf("NEW_ASSIGN") > 0)
 								{
+									System.out.println("key was a NEW_ASSIGN entry");
 									// Handle adding a new info entry
 									CardInfoFieldEntry entry = new CardInfoFieldEntry();
 									byte[] idbytes = new byte[16];
