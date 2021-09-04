@@ -532,7 +532,8 @@ public final class ExampleBot
 						CardDef[] cards = cardDefinitions.values().toArray(CardDef[]::new);
 						if (cards.length == 0)
 						{
-							discordChannelObj.createMessage("Sorry " + nickname + ", I don't have any cards to drop yet!\nAsk an admin to add some using the admin panel at https://" + settings.siteUrl + "/admin/cards");
+							discordChannelObj.createMessage("Sorry " + nickname + ", I don't have any cards to drop yet!\nAsk an admin to add some using the admin panel at https://" + settings.siteUrl + "/admin/cards").subscribe();
+							return;
 						}
 						
 						String cardStrSend = "";
