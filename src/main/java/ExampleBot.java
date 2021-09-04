@@ -829,6 +829,12 @@ public final class ExampleBot
 										card.owner = user;
 										card.handleAdd();
 										cardInstances.put(card.id, card);
+										System.out.println("Checkpoint 1 " + dropInfo.channel);
+										System.out.println("Checkpoint 2 " + card);
+										System.out.println("Checkpoint 3 " + card.stars);
+										System.out.println("Checkpoint 4 " + card.def);
+										System.out.println("Checkpoint 5 " + card.def.displayName);
+										System.out.println("Checkpoint 6 " + card.level);
 										dropInfo.channel.createMessage("Enjoy your new " + card.stars + " star " + card.def.displayName + " (level " + card.level + ")").subscribe();
 									}
 									catch (SQLException ex)
