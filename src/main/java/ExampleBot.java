@@ -711,6 +711,8 @@ public final class ExampleBot
 							dungeonInfo.correctEntryIndex = correctEntryIndex;
 							dungeonInfo.card = dungeonCard;
 							
+							System.out.println("Dungeon correctEntryIndex is " + correctEntryIndex);
+							
 							discordChannelObj.createEmbed(spec -> {
 								var temp = spec.setColor(Color.RED)
 								.setThumbnail(message.getAuthor().orElseThrow(null).getAvatarUrl())
@@ -817,7 +819,8 @@ public final class ExampleBot
 							if (b.length == 7 && b[1] == (byte)-17 && b[2] == (byte)-72 && b[3] == (byte)-113 && b[4] == (byte)-30 && b[5] == (byte)-125 && b[6] == (byte)-93)
 							{
 								pendingDungeonInfo.remove(dungeonInfo);
-								int ind = raw.charAt(0)-0x31+1;
+								int ind = raw.charAt(0)-0x31;
+								System.out.println(nickname + " selected dungeon entry index " + ind)
 								if (ind == dungeonInfo.correctEntryIndex)
 								{
 									try
