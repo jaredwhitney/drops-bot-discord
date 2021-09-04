@@ -132,6 +132,7 @@ public final class ExampleBot
 					catch (SQLException ex)
 					{
 						req.respond("Internal error: " + ex.getMessage());
+						ex.printStackTrace();
 					}
 				}
 				else if (req.matches(HttpVerb.GET, "/admin/cardpack"))
@@ -158,6 +159,7 @@ public final class ExampleBot
 						if (card.displayDescription != null)
 							datajson += "\t\t\"displayDescription\": \"" + card.displayDescription + "\",\n";
 						datajson += "\t\t\"image\": \"https://" + settings.siteUrl + "/card/" + card.imageFilename + "\",\n";
+						datajson += "\t\t\"cardPack\": \"" + card.cardPack.packName + "\",\n";
 						datajson += "\t\t\"extraInfo\": [\n";
 						for (ArrayList<CardInfoFieldEntry> entryList : card.info.values())
 						{
@@ -189,7 +191,6 @@ public final class ExampleBot
 					{
 						String displayDescription = new String(req.getMultipart("displayDescription")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
 						String cardPack = new String(req.getMultipart("cardPack")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
-						System.out.println("Was called to add a card to the cardPack " + cardPack);
 						HttpRequest.Multipart fileDesc = req.getMultipart("cardImage")[0];
 						String rawName = SysUtils.stripDangerousCharacters(fileDesc.filename.substring(0, fileDesc.filename.lastIndexOf("."))) + "." + SysUtils.stripDangerousCharacters(fileDesc.filename.substring(fileDesc.filename.lastIndexOf(".")));
 						String displayName = new String(req.getMultipart("displayName")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
@@ -216,6 +217,7 @@ public final class ExampleBot
 					catch (Exception ex)
 					{
 						req.respond("Internal error: " + ex.getMessage());
+						ex.printStackTrace();
 					}
 				}
 				else if (req.matches(HttpVerb.POST, "/admin/cards/edit"))
@@ -303,6 +305,7 @@ public final class ExampleBot
 					catch (Exception ex)
 					{
 						req.respond("Internal error: " + ex.getMessage());
+						ex.printStackTrace();
 					}
 				}
 				else if (req.matches(HttpVerb.GET, "/admin/infofield"))
@@ -324,6 +327,7 @@ public final class ExampleBot
 					catch (Exception ex)
 					{
 						req.respond("Internal error: " + ex.getMessage());
+						ex.printStackTrace();
 					}
 				}
 				else if (req.matches(HttpVerb.POST, "/admin/infofield/add"))
@@ -349,6 +353,7 @@ public final class ExampleBot
 					catch (Exception ex)
 					{
 						req.respond("Internal error: " + ex.getMessage());
+						ex.printStackTrace();
 					}
 				}
 				else if (req.matches(HttpVerb.POST, "/admin/infofield/remove"))
@@ -372,6 +377,7 @@ public final class ExampleBot
 					catch (Exception ex)
 					{
 						req.respond("Internal error: " + ex.getMessage());
+						ex.printStackTrace();
 					}
 				}
 				else if (req.matches(HttpVerb.POST, "/admin/infofield/edit"))
@@ -397,6 +403,7 @@ public final class ExampleBot
 					catch (Exception ex)
 					{
 						req.respond("Internal error: " + ex.getMessage());
+						ex.printStackTrace();
 					}
 				}
 				else if (req.matches(HttpVerb.GET, "/admin/settings"))
@@ -467,6 +474,7 @@ public final class ExampleBot
 					catch (SQLException ex)
 					{
 						req.respond("Internal error: " + ex.getMessage());
+						ex.printStackTrace();
 					}
 				}
 				else
