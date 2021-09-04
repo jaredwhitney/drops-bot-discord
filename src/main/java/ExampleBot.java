@@ -295,7 +295,7 @@ public final class ExampleBot
 						cardInfoCopy.addAll(card.info.values());
 						for (ArrayList<CardInfoFieldEntry> entryList : cardInfoCopy)
 						{
-							for (CardInfoFieldEntry entry : entryList)
+							for (CardInfoFieldEntry entry : (ArrayList<CardInfoFieldEntry>)entryList.clone())
 							{
 								if (infoFieldPresent.get(entry.id) == null)
 								{
