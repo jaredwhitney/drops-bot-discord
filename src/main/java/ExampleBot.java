@@ -922,18 +922,6 @@ public final class ExampleBot
 abstract class DBEnabledClass
 {
 	static Connection connection;
-	protected DBEnabledClass clone()
-	{
-		try
-		{
-			return (DBEnabledClass)super.clone();
-		}
-		catch (Exception ex)
-		{
-			ex.printStackTrace();
-			throw new RuntimeException("DBEnabledClass clone failed!");
-		}
-	}
 	void handleAdd() throws SQLException
 	{
 		addToDatabase();
@@ -966,6 +954,7 @@ abstract class DBEnabledClass
 	}
 	abstract void removeFromDatabase() throws SQLException;
 	abstract void removeFromObjects();
+	protected abstract DBEnabledClass clone();
 }
 
 class DatabaseManager
@@ -1012,6 +1001,15 @@ class User extends DBEnabledClass
 	long lastDungeonTime;
 	
 	Map<String,CardInst> inventory = new HashMap<String,CardInst>();
+	
+	protected User clone()
+	{
+		User user = new User();
+		user.userId = userId;
+		user.lastDropTime = lastDropTime;
+		user.lastDungeonTime = lastDungeonTime;
+		return user;
+	}
 	
 	static void tableInit() throws SQLException
 	{
@@ -1080,6 +1078,14 @@ class CardPack extends DBEnabledClass
 	
 	Map<String,CardDef> cards = new HashMap<String,CardDef>();
 	
+	protected CardPack clone()
+	{
+		CardPack pack = new CardPack();
+		pack.packName = packName;
+		pack.cards.putAll(cards);
+		return pack;
+	}
+	
 	static void tableInit() throws SQLException
 	{
 		connection.createStatement().execute(
@@ -1136,6 +1142,18 @@ class CardDef extends DBEnabledClass
 	
 	Map<String,CardInst> instances = new HashMap<String,CardInst>();
 	Map<CardInfoField,ArrayList<CardInfoFieldEntry>> info = new HashMap<CardInfoField,ArrayList<CardInfoFieldEntry>>();
+	
+	protected CardDef clone()
+	{
+		CardDef card = new CardDef();
+		card.imageFilename = imageFilename;
+		card.displayName = displayName;
+		card.displayDescription = displayDescription;
+		card.cardPack = cardPack;
+		card.instances.putAll(instances);
+		card.info.putAll(info);
+		return card;
+	}
 	
 	static void tableInit() throws SQLException
 	{
@@ -1219,6 +1237,17 @@ class CardInst extends DBEnabledClass
 	int level;
 	int stars;
 	User owner;
+	
+	protected CardInst clone()
+	{
+		CardInst card = new CardInst();
+		card.def = def;
+		card.id = id;
+		card.level = level;
+		card.stars = stars;
+		card.owner = owner;
+		return card;
+	}
 	
 	static void tableInit() throws SQLException
 	{
@@ -1312,6 +1341,15 @@ class CardInfoField extends DBEnabledClass
 	
 	Map<String,CardInfoFieldEntry> entries = new HashMap<String,CardInfoFieldEntry>();
 	
+	protected CardInfoField clone()
+	{
+		CardInfoField infoField = new CardInfoField();
+		infoField.keyName = keyName;
+		infoField.questionFormat = questionFormat;
+		infoField.entries.putAll(entries);
+		return infoField;
+	}
+	
 	static void tableInit() throws SQLException
 	{
 		connection.createStatement().execute(
@@ -1375,6 +1413,16 @@ class CardInfoFieldEntry extends DBEnabledClass
 	CardDef card;
 	CardInfoField field;
 	String value;
+	
+	protected CardInfoFieldEntry clone()
+	{
+		CardInfoFieldEntry entry = new CardInfoFieldEntry();
+		entry.id = id;
+		entry.card = card;
+		entry.field = field;
+		entry.value = value;
+		return entry;
+	}
 	
 	static void tableInit() throws SQLException
 	{
@@ -1508,6 +1556,11 @@ class Settings extends DBEnabledClass
 	
 	// Client ID of the Discord bot's application (this can be made public!)
 	String botClientId;
+	
+	protected Settings clone()
+	{
+		throw new RuntimeException("Settings cannot currently be cloned.");
+	}
 	
 	static void tableInit() throws SQLException
 	{
