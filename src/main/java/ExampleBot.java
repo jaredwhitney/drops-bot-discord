@@ -164,7 +164,7 @@ public final class ExampleBot
 						for (ArrayList<CardInfoFieldEntry> entryList : card.info.values())
 						{
 							for (CardInfoFieldEntry entry : entryList)
-								datajson += "\t\t\t{ \"id\": \"" + entry.id + "\", \"key\": \"" + entry.field.keyName + "\", \"value\": \"" + entry.value + "\" }\n";
+								datajson += "\t\t\t{ \"id\": \"" + entry.id + "\", \"key\": \"" + entry.field.keyName + "\", \"value\": \"" + entry.value + "\" },\n";
 						}
 						datajson += "\t\t]\n";
 						datajson += "},\n";
