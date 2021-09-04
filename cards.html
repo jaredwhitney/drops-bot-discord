@@ -214,6 +214,7 @@
 				</select>
 				<button class="p-button--positive">Save changes</button>
 				<button id="newExtraButton" class="p-button">Add extra info</button>
+				<input name="imageFilename" id="imageFilename" type="hidden" value="~NULL~"></input>
 			</fieldset>
 			<fieldset id="extra-info-container">
 				<!-- <label for="dg_hero_power">Hero power</label> -->
@@ -356,6 +357,7 @@
 			elem.addEventListener('click', function () {
 				var id = this.getElementsByClassName('data-id')[0].innerText
 				var name = data[id].displayName
+				document.getElementById('imageFilename').value = id;
 				document.getElementById('displayName').value = name;
 				document.getElementById('displayDescription').value = data[id].displayDescription||"";
 				document.getElementById('cardPack').value = data[id].cardPack
