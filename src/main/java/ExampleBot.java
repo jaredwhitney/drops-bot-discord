@@ -682,11 +682,11 @@ public final class ExampleBot
 							
 							ArrayList<CardDef> cardOptions = new ArrayList<CardDef>();
 							for (CardDef card : cardDefinitions.values())
-								if (card.info.get(dungeonField.keyName) != null && card.info.get(dungeonField.keyName).size() > 0)
+								if (card.info.get(dungeonField) != null && card.info.get(dungeonField).size() > 0)
 									cardOptions.add(card);
 							CardDef dungeonCard = cardOptions.get((int)(Math.random()*cardOptions.size()));
 							
-							ArrayList<CardInfoFieldEntry> possibleCorrectEntries = dungeonCard.info.get(dungeonField.keyName);
+							ArrayList<CardInfoFieldEntry> possibleCorrectEntries = dungeonCard.info.get(dungeonField);
 							CardInfoFieldEntry correctEntry = possibleCorrectEntries.get((int)(Math.random()*possibleCorrectEntries.size()));
 							
 							String[] dungeonValues = new String[numOptionsForDungeon];
