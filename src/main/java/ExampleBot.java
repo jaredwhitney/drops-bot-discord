@@ -18,7 +18,7 @@ import java.sql.*;
 public final class ExampleBot
 {
 	public static final String DATABASE_LOCATION = "/www/drops.0k.rip/dropdatabase.db";
-	public static final String STATIC_WEB_RESOURCE_LOCATION = "../../..";
+	public static final String STATIC_WEB_RESOURCE_LOCATION = ".";
 	
 	// populated from SQL database
 	public static Settings settings;
