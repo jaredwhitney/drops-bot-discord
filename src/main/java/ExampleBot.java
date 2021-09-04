@@ -287,7 +287,9 @@ public final class ExampleBot
 								}
 							}
 						}
-						for (ArrayList<CardInfoFieldEntry> entryList : card.info.values().toArray(ArrayList<CardInfoFieldEntry>[]::new))
+						ArrayList<ArrayList<CardInfoFieldEntry>> cardInfoCopy = new ArrayList<ArrayList<CardInfoFieldEntry>>();
+						cardInfoCopy.addAll(card.info.values());
+						for (ArrayList<CardInfoFieldEntry> entryList : cardInfoCopy)
 						{
 							for (CardInfoFieldEntry entry : entryList)
 							{
