@@ -714,7 +714,7 @@ public final class ExampleBot
 						}
 						else
 						{
-							discordChannelObj.createMessage("Sorry " + nickname + ", I don't have enough card info to create dungeons with the specified option number of " + settings.dungeonOptions + ".\nAsk an admin to add more card info using the admin panel at https://" + settings.siteUrl + "/admin/cards or lower the dungeon option number.").subscribe();
+							discordChannelObj.createMessage("Sorry " + nickname + ", I don't have enough card info to create dungeons with the specified option count of " + settings.dungeonOptions + ".\nAsk an admin to add more card info using the admin panel at https://" + settings.siteUrl + "/admin/cards or lower the dungeon option count.").subscribe();
 						}
 						
 					}
@@ -930,6 +930,7 @@ abstract class DBEnabledClass
 		}
 		catch (Exception ex)
 		{
+			ex.printStackTrace();
 			throw new RuntimeException("DBEnabledClass clone failed!");
 		}
 	}
