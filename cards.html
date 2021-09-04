@@ -396,6 +396,10 @@
 		  for (elem of addTriggers) {
 			elem.addEventListener('click', function () {
 				addAside.classList.remove('is-collapsed');
+				document.getElementById('cardAddDisplayName').value = null
+				document.getElementById('cardAddDisplayDescription').value = null
+				document.getElementById('cardAddImage').value = null
+				document.getElementById('cardAddcardPack').value = ""
 				aside.classList.add('is-collapsed');
 			})
 		  }
