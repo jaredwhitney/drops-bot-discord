@@ -1062,6 +1062,7 @@ class User extends DBEnabledClass
 			+ " WHERE userid = '" + userId + "'"
 		);
 	}
+	void updateInObjects(DBEnabledClass previous) {}
 	void removeFromDatabase() throws SQLException
 	{
 		connection.createStatement().executeUpdate(
