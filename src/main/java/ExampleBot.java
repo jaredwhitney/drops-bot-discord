@@ -1480,7 +1480,7 @@ class Settings extends DBEnabledClass
 	{
 		ResultSet settingsRS = connection.createStatement().executeQuery(
 			"SELECT * FROM settings"
-			+ "LIMIT 1"
+			+ " LIMIT 1"
 		);
 		if (!settingsRS.next())
 		{
