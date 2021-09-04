@@ -1421,6 +1421,8 @@ class CardInfoField extends DBEnabledClass
 	}
 	void removeFromDatabase() throws SQLException
 	{
+		if (entries.size() > 0)
+			throw new RuntimeException("Not going to remove this info field definition: it's still being used by " + entries.size() + " cards!");
 		connection.createStatement().executeUpdate(
 			"DELETE FROM cardInfoField"
 			+ " WHERE keyName = '" + keyName + "'"
