@@ -872,23 +872,6 @@ public final class ExampleBot
 abstract class DBEnabledClass
 {
 	static Connection connection;
-	protected static void tableInit(Connection con) throws SQLException
-	{
-		connection = con;
-		tableInit();
-	}
-	static void tableInit() throws SQLException
-	{
-		throw new RuntimeException("Unimplemented!");
-	}
-	static void readAllFromDatabaseFinalize(Map<String,User> users, Map<String,CardPack> cardPacks, Map<String,CardDef> cardDefs, Map<String,CardInst> cardInsts, Map<String,CardInfoField> cardInfoFields, Map<String,CardInfoFieldEntry> cardInfoFieldEntries) throws SQLException
-	{
-		throw new RuntimeException("Unimplemented!");
-	}
-	static DBEnabledClass readFromDatabase() throws SQLException
-	{
-		throw new RuntimeException("Unimplemented!");
-	}
 	protected DBEnabledClass clone()
 	{
 		try
@@ -942,13 +925,14 @@ class DatabaseManager
 	}
 	public static void initAllTables() throws SQLException
 	{
-		User.tableInit(ExampleBot.connection);
-		CardPack.tableInit(ExampleBot.connection);
-		CardDef.tableInit(ExampleBot.connection);
-		CardInst.tableInit(ExampleBot.connection);
-		CardInfoField.tableInit(ExampleBot.connection);
-		CardInfoFieldEntry.tableInit(ExampleBot.connection);
-		Settings.tableInit(ExampleBot.connection);
+		DBEnabledClass.connection = ExampleBot.connection;
+		User.tableInit();
+		CardPack.tableInit();
+		CardDef.tableInit();
+		CardInst.tableInit();
+		CardInfoField.tableInit();
+		CardInfoFieldEntry.tableInit();
+		Settings.tableInit();
 	}
 	public static void readAllFromDatabase() throws SQLException
 	{
