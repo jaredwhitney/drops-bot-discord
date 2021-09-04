@@ -536,7 +536,7 @@ public final class ExampleBot
 							return;
 						}
 						user.lastDropTime = System.currentTimeMillis();
-						user.handleUpdate();
+						user.handleUpdate(null);
 						
 						int numCardsForDrop = settings.dropNumCards;
 						
@@ -633,7 +633,7 @@ public final class ExampleBot
 							return;
 						}
 						user.lastDungeonTime = System.currentTimeMillis();
-						user.handleUpdate();
+						user.handleUpdate(null);
 						
 						// If the settings value changes in the middle of this, we don't want it to break things
 						final int numOptionsForDungeon = settings.dungeonOptions;
