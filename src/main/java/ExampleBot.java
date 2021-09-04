@@ -800,6 +800,7 @@ public final class ExampleBot
 									try
 									{
 										CardInst card = genCard(dungeonInfo.card);
+										card.owner = user;
 										card.handleAdd();
 										cardInstances.put(card.id, card);
 										dropInfo.channel.createMessage("Enjoy your new " + card.stars + " star " + card.def.displayName + " (level " + card.level + ")").subscribe();
