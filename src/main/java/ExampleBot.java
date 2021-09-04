@@ -56,13 +56,11 @@ public final class ExampleBot
 					return;
 				if (req.matches(HttpVerb.GET, "/") || req.matches(HttpVerb.GET, "/index.html"))
 				{
-					req.respond("<body>"
-						+ "<a href=\"/admin/settings\">General Settings</a><br>"
-						+ "<a href=\"/admin/cardpacks\">View / edit card packs</a><br>"
-						+ "<a href=\"/admin/cards\">View / edit cards</a><br>"
-						+ "<a href=\"/admin/infofield\">View / edit card extra info field options</a><br>"
-						+ "<a href=\"https://discordapp.com/api/oauth2/authorize?client_id=" + settings.botClientId + "&permissions=243336208192&scope=bot\">Add drops bot to a Discord server</a><br>"
-					+ "</body>");
+					req.respondWithHeaders1(
+						HttpStatus.TEMPORARY_REDIRECT_302,
+						"Redirecting you to <a href=\"/admin/cards\">/admin/cards</a>",
+						"Location: /admin/cards"
+					);
 					return;
 				}
 				else if (req.matches(HttpVerb.GET, "/cardpack"))
@@ -182,7 +180,9 @@ public final class ExampleBot
 						datajson += "\t\"" + pack.packName + "\",\n";
 					}
 					datajson += "]";
-					String resp = cardHTML.replaceAll("\\Q<<>>DATALOC<<>>\\E",datajson);
+					String resp = cardHTML
+								.replaceAll("\\Q<<>>DATALOC<<>>\\E", datajson)
+								.replaceAll("\\Q<<>>BOT_ADD_URL<<>>\\E", "https://discordapp.com/api/oauth2/authorize?client_id=" + settings.botClientId + "&permissions=243336208192&scope=bot");
 					req.respond(resp);
 				}
 				else if (req.matches(HttpVerb.POST, "/admin/cards/add"))
