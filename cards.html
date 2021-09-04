@@ -1,0 +1,354 @@
+<html>
+<head>
+	<!--script src="vanilla-framework-version-2.35.0.min.js"></script-->
+	<link rel="stylesheet" href="https://assets.ubuntu.com/v1/vanilla-framework-version-2.35.0.min.css" />
+	<link rel="stylesheet" href="cards.css" />
+</head>
+<body>
+<div class="l-application" role="presentation">
+  <div class="l-navigation-bar">
+    <div class="p-panel is-dark">
+      <div class="p-panel__header">
+        <a class="p-panel__logo" href="#" style="color:inherit;text-decoration:inherit;">
+          <img class="p-panel__logo-icon" src="https://drops.0k.rip/img/botprofile.png" alt="" width="24" height="24">
+            <div class="p-panel__logo-name is-fading-when-collapsed u-vertically-center" style="height:1rem;margin-bottom:0.5rem;">drops? bot</div>
+        </a>
+        <div class="p-panel__controls">
+          <span class="p-panel__toggle js-menu-toggle">Menu</span>
+        </div>
+      </div>
+    </div>
+  </div>
+	<header id="navigation" class="l-navigation is-collapsed">
+	    <div class="l-navigation__drawer">
+      <div class="p-panel is-dark">
+        <div class="p-panel__header is-sticky">
+          <a class="p-panel__logo" href="#" style="color:inherit;text-decoration:inherit;">
+            <img class="p-panel__logo-icon u-vertically-center" src="https://drops.0k.rip/img/botprofile.png" alt="" width="24" height="24">
+            <div class="p-panel__logo-name is-fading-when-collapsed u-vertically-center" style="height:1rem;margin-bottom:0.5rem;">drops? bot</div>
+          </a>
+          <div class="p-panel__controls u-hide--large">
+            <button class="p-button--base has-icon u-no-margin u-hide--medium js-menu-close"><i class="p-icon--close"></i></button>
+            <button class="p-button--base has-icon u-no-margin u-hide--small js-menu-pin"><i class="p-icon--close p-icon--pin"></i></button>
+          </div>
+        </div>
+<div class="p-panel__content">
+<div class="p-side-navigation--icons is-dark" id="drawer-icons">
+  <nav aria-label="Main navigation">
+		<div class="p-side-navigation__list">
+				<ul class="p-side-navigation__list">
+					<li class="p-side-navigation__item">
+						<form class="p-search-box is-dark">
+							<input aria-label="search" type="search" class="p-search-box__input" placeholder="Search Cards" name="search" autocomplete="on" required="">
+							<button type="reset" class="p-search-box__reset"><i class="p-icon--close"></i></button>
+							<button type="submit" class="p-search-box__button"><i class="p-icon--search"></i></button>
+						</form>
+					</li>
+					<li class="p-side-navigation__item">
+						<a class="p-side-navigation__link"><i class="p-icon--switcher-environments p-side-navigation__icon"></i>All Cards</a>
+					</li>
+					<li class="p-side-navigation__item">
+						<a class="p-side-navigation__link"><i class="p-icon--containers p-side-navigation__icon"></i>Card Packs</a>
+					</li>
+					<li class="p-side-navigation__item">
+						<a class="p-side-navigation__link"><i class="p-icon--information p-side-navigation__icon"></i>Extra Info Fields</a>
+					<li class="p-side-navigation__item">
+						<a class="p-side-navigation__link"><i class="p-icon--settings p-side-navigation__icon"></i>General Settings</a>
+					</li>
+				</ul>
+		</div>
+		</nav>
+		</div>
+		</div>
+		</div>
+		</div>
+		</header>
+	<main class="l-main">
+	  <div class="row">
+		  <p><h1>All Cards</h1></p>
+		</div>
+	  <div id="cardspane" class="row u-equal-height">
+			<div class="col-2">
+				<div class="p-card--highlighted u-vertically-center card-add-trigger" style="height:100%">
+					<div class="p-card__content">
+					<center>
+						<i class="p-icon--plus"></i>
+						<h4>
+							Add a card!
+						</h4>
+					</center>
+					</div>
+				</div>
+			</div>
+		</div>
+	  </main>
+    <aside id="edit-aside" class="l-aside is-collapsed" id="aside-panel">
+	<div class="p-panel">
+	<div class="p-panel__header">
+	<h4 class="p-panel__title">Edit card</h4>
+	<div class="p-panel__controls">
+	  <button class="p-button--base js-aside-close u-no-margin--bottom has-icon"><i class="p-icon--close"></i></button>
+	</div>
+	</div>
+      <div class="p-panel__content">
+		<form class="p-form p-form--inline" action="/admin/cards/edit" method="post" enctype="multipart/form-data">
+			<fieldset>
+				<label for="displayName" class="is-required">Display Name</label>
+				<input name="displayName" id="displayName" required="" value="~NULL~" style="box-sizing: border-box;width: 100%;"></input>
+				<label for="displayDescription">Display Description</label>
+				<input name="displayDescription" id="displayDescription" value="~NULL~" style="box-sizing: border-box;width: 100%;"></input>
+				<label for="cardPack">Card Pack</label>
+				<select name="cardPack" class="card-pack-selector" id="cardPack" style="box-sizing: border-box;width: 100%;">
+				</select>
+				<button class="p-button--positive">Save changes</button>
+				<button id="newExtraButton" class="p-button">Add extra info</button>
+			</fieldset>
+			<fieldset id="extra-info-container">
+				<!-- <label for="dg_hero_power">Hero power</label> -->
+				<!-- <input id="dg_hero_power" value="Engine" style="box-sizing: border-box;width: 100%;"></input> -->
+				<!-- <label for="dg_age">Age</label> -->
+				<!-- <input id="dg_age" value="16" style="box-sizing: border-box;width: 100%;"></input> -->
+			</fieldset>
+		</form>
+	</div>
+  </div>
+  </aside>
+    <aside id="add-aside" class="l-aside is-collapsed" id="aside-panel">
+	<div class="p-panel">
+	<div class="p-panel__header">
+	<h4 class="p-panel__title">New card</h4>
+	<div class="p-panel__controls">
+	  <button id="add-aside-close" class="p-button--base u-no-margin--bottom has-icon"><i class="p-icon--close"></i></button>
+	</div>
+	</div>
+      <div class="p-panel__content">
+		<form class="p-form p-form--stacked" action="/admin/cards/add" method="post" enctype="multipart/form-data">
+			<fieldset>
+				<label for="cardAddDisplayName" class="is-required">Display Name</label>
+				<input name="displayName" id="cardAddDisplayName" required="" value="" style="box-sizing: border-box;width: 100%;"></input>
+				<label for="cardAddDisplayDescription">Display Description</label>
+				<input name="displayDescription" id="cardAddDisplayDescription" value="" style="box-sizing: border-box;width: 100%;"></input>
+				<label for="cardAddImage" class="is-required">Card image</label>
+				<input name="cardImage" id="cardAddImage" type="file" required="" style="box-sizing: border-box;width: 100%;"></input>
+				<label for="cardAddcardPack" class="is-required">Card Pack</label>
+				<select class="card-pack-selector" name="cardPack" required="" id="cardAddcardPack" style="box-sizing: border-box;width: 100%;">
+				</select>
+				<button class="p-button--positive">Add card</button>
+			</fieldset>
+		</form>
+	</div>
+  </div>
+  </aside>
+  </div>
+  <script>
+	  function setupAppLayoutExamples() {
+		  var aside = document.getElementById('edit-aside');
+		  var navigation = document.querySelector('.l-navigation');
+
+		  var menuToggle = document.querySelector('.js-menu-toggle');
+		  var menuClose = document.querySelector('.js-menu-close');
+		  var asideClose = document.querySelector('.js-aside-close');
+		  
+		  var newExtraButton = document.getElementById('newExtraButton');
+		  var addTriggers = document.querySelectorAll('.card-add-trigger');
+		  var addAside = document.getElementById('add-aside');
+		  var addAsideClose = document.getElementById('add-aside-close');
+		  var extraInfo = document.getElementById('extra-info-container');
+		  var cardsPane = document.getElementById('cardspane');
+
+		  if (menuToggle) {
+			menuToggle.addEventListener('click', function () {
+			  navigation.classList.toggle('is-collapsed');
+			});
+		  }
+
+		  if (menuClose) {
+			menuClose.addEventListener('click', function () {
+			  navigation.classList.add('is-collapsed');
+			  document.activeElement.blur();
+			});
+		  }
+		  
+		  <<>>DATALOC<<>>
+		  
+		  /*var data = {
+			"jiro.webp": {
+				"displayName":"Jiro",
+				"displayDescription":"Hearing Hero: Earphone Jack",
+				"image":"https://drops.0k.rip/card/jiro.webp",
+				"cardPack":"My Hero Academia",
+				"extraInfo": [
+					{ "id": 0, "key": "dg_hero_power", "value": "Earphone Jack" },
+				],
+			},
+			"hawks.webp": {
+				"displayName":"Hawks",
+				"displayDescription":"Wing Hero",
+				"image":"https://drops.0k.rip/card/hawks.webp",
+				"cardPack":"My Hero Academia",
+				"extraInfo": {},
+			},
+			"kaminari.webp": {
+				"displayName":"Kaminari",
+				"displayDescription":"Stun Gun Hero: Chargebolt",
+				"image":"https://drops.0k.rip/card/kaminari.webp",
+				"cardPack":"My Hero Academia",
+				"extraInfo": {},
+			},
+		  };
+		  var keys = [
+			{ "raw": "dg_hero_power", "display": "Hero Power" },
+			{ "raw": "dg_age", "display": "Age" },
+		  ];
+		  var packs = [
+			"League of Legends",
+			"My Hero Academia",
+			"Valorant",
+			"Stardew Valley",
+		  ];*/
+		  
+		  for (cardid in data) {
+			var card = data[cardid];
+			var colDiv = document.createElement("div");
+			colDiv.setAttribute("class","col-2");
+			var cardDiv = document.createElement("div");
+			cardDiv.setAttribute("class","p-card--highlighted u-vertically-center card-editable");
+			cardDiv.setAttribute("style","height:100%;");
+			var dataIdSpan = document.createElement("span");
+			dataIdSpan.setAttribute("class","data-id");
+			dataIdSpan.setAttribute("style","display:none;");
+			dataIdSpan.innerHTML = cardid;
+			var contentDiv = document.createElement("div");
+			contentDiv.setAttribute("class","p-card__content");
+			var center = document.createElement("center");
+			var cardImage = document.createElement("img");
+			cardImage.setAttribute("class","p-card__image");
+			cardImage.setAttribute("alt",card.displayName);
+			cardImage.setAttribute("src",card.image);
+			var nameHeader = document.createElement("h4");
+			nameHeader.innerHTML = card.displayName;
+			center.appendChild(cardImage);
+			center.appendChild(nameHeader);
+			contentDiv.appendChild(center);
+			cardDiv.appendChild(dataIdSpan);
+			cardDiv.appendChild(contentDiv);
+			colDiv.appendChild(cardDiv);
+			cardsPane.appendChild(colDiv);
+		  }
+		  
+		  newExtraButton.addEventListener('click', function () {
+			addExtraInfoSideCardEntry(null, null, null, keys);
+		  })
+
+		  for (elem of document.querySelectorAll('.card-editable')) {
+			elem.addEventListener('click', function () {
+				var id = this.getElementsByClassName('data-id')[0].innerText
+				var name = data[id].displayName
+				document.getElementById('displayName').value = name;
+				document.getElementById('displayDescription').value = data[id].displayDescription||"";
+				document.getElementById('cardPack').value = data[id].cardPack
+				while (extraInfo.firstChild) {
+					extraInfo.removeChild(extraInfo.lastChild);
+				}
+				if (data[id].extraInfo && data[id].extraInfo.length > 0) {
+				for (infoEntry of data[id].extraInfo) {
+					addExtraInfoSideCardEntry(infoEntry.id, infoEntry.key, infoEntry.value, keys);
+				}
+				} else {
+					extraInfo.setAttribute("style","display:none;");
+				}
+				aside.classList.remove('is-collapsed');
+				addAside.classList.add('is-collapsed');
+			});
+		  }
+		  
+		  for (elem of document.querySelectorAll('.card-pack-selector')) {
+			var selectOptn = document.createElement("option");
+			selectOptn.setAttribute("value","");
+			selectOptn.setAttribute("disabled","");
+			selectOptn.setAttribute("hidden","");
+			selectOptn.setAttribute("selected","");
+			selectOptn.innerHTML = "Select a card pack";
+			elem.appendChild(selectOptn);
+			for (pack of packs) {
+				var packOptn = document.createElement("option");
+				packOptn.setAttribute("value", pack);
+				packOptn.innerHTML = pack;
+				elem.appendChild(packOptn);
+			}
+		  }
+		  
+		  for (elem of addTriggers) {
+			elem.addEventListener('click', function () {
+				addAside.classList.remove('is-collapsed');
+				aside.classList.add('is-collapsed');
+			})
+		  }
+
+		  if (asideClose) {
+			asideClose.addEventListener('click', function () {
+			  aside.classList.add('is-collapsed');
+			});
+		  }
+		  addAsideClose.addEventListener('click', function () {
+			addAside.classList.add('is-collapsed');
+		  });
+		}
+		function addExtraInfoSideCardEntry(sid, skey, value, keys) {
+			if (sid == null) {
+				sid = "NEW_ASSIGN-" + Math.random()
+			}
+			var extraInfo = document.getElementById('extra-info-container');
+			if (extraInfo.getAttribute("style")=="display:none;") {
+				extraInfo.setAttribute("style", "display:block;");
+			}
+		    var group = document.createElement('div');
+			group.setAttribute("class", "p-form__group");
+			var keyEntry = document.createElement('select');
+			keyEntry.setAttribute("name", "extra-info-key-" + sid);
+			keyEntry.setAttribute("style", "margin-bottom: 0px;");
+			for (key of keys) {
+				var keyOptn = document.createElement('option');
+				keyOptn.setAttribute("value", key["raw"]);
+				if (key == skey) keyOptn.setAttribute("selected", "");
+				keyOptn.innerHTML = key["display"];
+				keyEntry.appendChild(keyOptn);
+			}
+			var keyValue = document.createElement('input');
+			keyValue.setAttribute("name", "extra-info-value-" + sid);
+			keyValue.setAttribute("required","");
+			if (value) keyValue.setAttribute("value",value);
+			var removeButton = document.createElement('button');
+			removeButton.setAttribute("class","p-button--negative");
+			removeButton.innerHTML = "Delete";
+			removeButton.setAttribute("style", "margin-bottom: 0px;");
+			removeButton.addEventListener('click', function() {
+				if (this.getAttribute("class") == "p-button--negative") {
+					if (sid.includes("NEW_ASSIGN")) {
+						group.remove();
+						if (!extraInfo.firstChild) {
+							extraInfo.setAttribute("style", "display:none;");
+						}
+					} else {
+						keyEntry.setAttribute("disabled","");
+						keyValue.setAttribute("disabled","");
+						this.innerHTML = "Undo"
+						this.setAttribute("class","p-button--base");
+					}
+				} else {
+					keyEntry.removeAttribute("disabled");
+					keyValue.removeAttribute("disabled");
+					this.innerHTML = "Delete"
+					this.setAttribute("class","p-button--negative");
+				}
+			});
+			group.appendChild(keyEntry);
+			group.appendChild(keyValue);
+			group.appendChild(removeButton);
+			extraInfo.appendChild(group);
+		}
+		setupAppLayoutExamples();
+  </script>
+</body>
+</html>
+
