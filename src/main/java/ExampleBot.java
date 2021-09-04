@@ -245,7 +245,7 @@ public final class ExampleBot
 						{
 							String key = multipart.getKey();
 							System.out.println("key >" + key + "<");
-							if (key.indexOf("extra-info-key-") > 0)
+							if (key.contains("extra-info-key-"))
 							{
 								String keyId = key.substring("extra-info-key-".length());
 								System.out.println("keyId >" + keyId + "<");
@@ -253,7 +253,7 @@ public final class ExampleBot
 								System.out.println("keyName >" + keyName + "<");
 								String keyValue = new String(req.multiparts.get("extra-info-value-"+keyId).get(0).filedata, java.nio.charset.StandardCharsets.UTF_8);
 								System.out.println("keyValue >" + keyValue + "<");
-								if (keyId.indexOf("NEW_ASSIGN") > 0)
+								if (keyId.contains("NEW_ASSIGN"))
 								{
 									System.out.println("key was a NEW_ASSIGN entry");
 									// Handle adding a new info entry
