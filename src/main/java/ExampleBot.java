@@ -380,9 +380,13 @@ public final class ExampleBot
 						
 						CardInfoField field = cardInfoFields.get(keyName);
 						
+						System.out.println("SQL Remove field >" + keyName + "<");
 						field.removeFromDatabase();
+						System.out.println("Objects Remove field >" + keyName + "<");
 						field.removeFromObjects();
-						cardInfoFields.remove(field);
+						System.out.println("Card Info Remove field >" + keyName + "<");
+						cardInfoFields.remove(field.keyName);
+						System.out.println("Finish >" + keyName + "<");
 						
 						req.respondWithHeaders1(
 							HttpStatus.TEMPORARY_REDIRECT_302,
