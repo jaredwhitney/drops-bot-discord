@@ -275,6 +275,8 @@ public final class ExampleBot
 								}
 								else
 								{
+									System.out.println("updating an existing key >" + keyId + "<");
+									
 									// Handle updating an existing info entry
 									CardInfoFieldEntry entry = cardInfoFieldEntries.get(keyId);
 									var entryOld = entry.clone();
@@ -287,6 +289,8 @@ public final class ExampleBot
 								}
 							}
 						}
+						System.out.println("Touched keys: " + Arrays.toString(infoFieldPresent.keySet().toArray(String[]::new)));
+						
 						ArrayList<ArrayList<CardInfoFieldEntry>> cardInfoCopy = new ArrayList<ArrayList<CardInfoFieldEntry>>();
 						cardInfoCopy.addAll(card.info.values());
 						for (ArrayList<CardInfoFieldEntry> entryList : cardInfoCopy)
@@ -295,6 +299,8 @@ public final class ExampleBot
 							{
 								if (infoFieldPresent.get(entry.id) == null)
 								{
+									System.out.println("removing an existing key >" + entry.id + "<");
+									
 									// Handle removing an info entry
 									entry.handleRemove();
 									cardInfoFieldEntries.remove(entry.id);
