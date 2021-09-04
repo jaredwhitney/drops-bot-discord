@@ -536,6 +536,7 @@ public final class ExampleBot
 							return;
 						}
 						user.lastDropTime = System.currentTimeMillis();
+						user.handleUpdate();
 						
 						int numCardsForDrop = settings.dropNumCards;
 						
@@ -632,6 +633,7 @@ public final class ExampleBot
 							return;
 						}
 						user.lastDungeonTime = System.currentTimeMillis();
+						user.handleUpdate();
 						
 						// If the settings value changes in the middle of this, we don't want it to break things
 						final int numOptionsForDungeon = settings.dungeonOptions;
@@ -712,7 +714,7 @@ public final class ExampleBot
 						}
 						else
 						{
-							discordChannelObj.createMessage("Sorry " + nickname + ", I don't have enough card info to create dungeons with the specified option number of " + settings.dungeonOptions + ".\nAsk an admin to add more card info using the admin panel at https://" + settings.siteUrl + "/admin/cards or lower the dungeon option number.");
+							discordChannelObj.createMessage("Sorry " + nickname + ", I don't have enough card info to create dungeons with the specified option number of " + settings.dungeonOptions + ".\nAsk an admin to add more card info using the admin panel at https://" + settings.siteUrl + "/admin/cards or lower the dungeon option number.").subscribe();
 						}
 						
 					}
