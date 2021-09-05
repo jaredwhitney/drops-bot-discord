@@ -38,6 +38,7 @@ public final class ExampleBot
 	public static Connection connection;
 	public static Statement statement;
 	public static String cardHTML, settingsHTML, cardPackHTML, infoFieldHTML, accountHTML;
+	public static byte[] botProfile;
 	
 	public static void main(final String[] args) throws SQLException
 	{
@@ -99,8 +100,11 @@ public final class ExampleBot
 			cardPackHTML = readResourceToString("cardpacks.html");
 			infoFieldHTML = readResourceToString("infofields.html");
 			accountHTML = readResourceToString("account.html");
+			botProfile = readResource("botprofile.png");
 			
 			server.accept((req) -> {
+				if (auth.handle(req, "drops-admin"))
+					return;
 				if (req.matches(HttpVerb.GET, "/card/.*"))
 				{
 					if (req.path.contains(".."))
@@ -116,9 +120,11 @@ public final class ExampleBot
 					}
 					req.respondWithFile(filePath);
 				}
-				if (auth.handle(req, "drops-admin"))
-					return;
-				if (req.matches(HttpVerb.GET, "/") || req.matches(HttpVerb.GET, "/index.html"))
+				else if (req.matches(HttpVerb.GET, "/img/botprofile.png") || req.matches(HttpVerb.GET, "/favicon.ico"))
+				{
+					req.respondRaw(botProfile);
+				}
+				else if (req.matches(HttpVerb.GET, "/") || req.matches(HttpVerb.GET, "/index.html"))
 				{
 					req.respondWithHeaders1(
 						HttpStatus.TEMPORARY_REDIRECT_302,
@@ -964,11 +970,15 @@ public final class ExampleBot
 	}
 	public static String readResourceToString(String resourceName) throws IOException
 	{
+		return new String(readResource(resourceName), java.nio.charset.StandardCharsets.UTF_8);
+	}
+	public static byte[] readResource(String resourceName) throws IOException
+	{
 		System.out.println("Read " + resourceName + " from the jar file");
 		InputStream in = ExampleBot.class.getResourceAsStream(resourceName); 
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
 		in.transferTo(os);
-		return new String(os.toByteArray(), java.nio.charset.StandardCharsets.UTF_8);
+		return os.toByteArray();
 	}
 	public static <T> ArrayList<T> list(T... items)
 	{
