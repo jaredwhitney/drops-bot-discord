@@ -49,7 +49,7 @@ public final class ExampleBot
 		try
 		{
 			HttpServer server = null;
-			for (int i = 0; i < (WEB_SERVER_STARTUP_TIMES_TO_RETRY+1); i++)
+			for (int i = 0; server == null && (i < (WEB_SERVER_STARTUP_TIMES_TO_RETRY+1)); i++)
 			{
 				try
 				{
@@ -69,7 +69,10 @@ public final class ExampleBot
 						System.out.println("Web server init failed, waiting 1 second before trying again. (attempt " + (i+1) + "/" + (WEB_SERVER_STARTUP_TIMES_TO_RETRY+1) + ").");
 						Thread.sleep(1000);
 					}
-					catch (Exception ex2){}
+					catch (Exception ex2)
+					{
+						ex2.printStackTrace();
+					}
 				}
 			}
 			AuthHandler auth = new AuthHandler(settings.authHandler);
