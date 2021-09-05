@@ -434,10 +434,11 @@ public final class ExampleBot
 						String questionFormat = new String(req.getMultipart("questionFormat")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
 						
 						CardInfoField field = cardInfoFields.get(keyName);
+						var oldField = field.clone();
 						field.keyName = keyName;
 						field.questionFormat = questionFormat;
 						
-						field.handleAdd();
+						field.handleUpdate(oldField);
 						cardInfoFields.put(field.keyName, field);
 						
 						req.respondWithHeaders1(
