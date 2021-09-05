@@ -129,8 +129,8 @@ public final class ExampleBot
 						cardPacks.put(cardPack.packName, cardPack);
 						req.respondWithHeaders1(
 							HttpStatus.TEMPORARY_REDIRECT_302,
-							"Redirecting you to <a href=\"/admin/cardpack?name=" + cardPackName + "\">/admin/cardpack?name=" + cardPackName + "</a>",
-							"Location: /admin/cardpack?name=" + cardPackName
+							"Redirecting you to <a href=\"/admin/cardpacks\">/admin/cardpacks</a>",
+							"Location: /admin/cardpacks"
 						);
 					}
 					catch (SQLException ex)
@@ -149,8 +149,8 @@ public final class ExampleBot
 						cardPacks.remove(cardPack.packName);
 						req.respondWithHeaders1(
 							HttpStatus.TEMPORARY_REDIRECT_302,
-							"Redirecting you to <a href=\"/admin/cardpack?name=" + cardPackName + "\">/admin/cardpack?name=" + cardPackName + "</a>",
-							"Location: /admin/cardpack?name=" + cardPackName
+							"Redirecting you to <a href=\"/admin/cardpacks\">/admin/cardpacks</a>",
+							"Location: /admin/cardpacks"
 						);
 					}
 					catch (SQLException ex)
