@@ -17,6 +17,12 @@ dependencies {
   implementation 'org.xerial:sqlite-jdbc:3.36.0.2'
 }
 
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(11))
+    }
+}
+
 jar {
     manifest {
         attributes 'Main-Class': 'ExampleBot'

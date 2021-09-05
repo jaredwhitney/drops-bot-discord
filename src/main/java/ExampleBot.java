@@ -101,6 +101,21 @@ public final class ExampleBot
 			accountHTML = readResourceToString("account.html");
 			
 			server.accept((req) -> {
+				if (req.matches(HttpVerb.GET, "/card/.*"))
+				{
+					if (req.path.contains(".."))
+					{
+						req.respond(HttpStatus.NOT_FOUND_404);
+						return;
+					}
+					Path filePath = Paths.get(settings.cardsFolder, req.path.substring("/card/".length())).toAbsolutePath();
+					if (!filePath.startsWith(Paths.get(settings.cardsFolder).toAbsolutePath()) || !filePath.toFile().exists())
+					{
+						req.respond(HttpStatus.NOT_FOUND_404);
+						return;
+					}
+					req.respondWithFile(filePath);
+				}
 				if (auth.handle(req, "drops-admin"))
 					return;
 				if (req.matches(HttpVerb.GET, "/") || req.matches(HttpVerb.GET, "/index.html"))
@@ -136,7 +151,14 @@ public final class ExampleBot
 					}
 					return;
 				}
-				if (!auth.enforceValidCredentials("drops-admin"))
+				boolean localUserBypass = false;
+				System.out.println(req.domain + " // " + (req.domain.equals("127.0.0.1:" + settings.serverPort)));
+				if (req.domain.equals("127.0.0.1:" + settings.serverPort))
+				{
+					auth.username = "Local User Bypass";
+					localUserBypass = true;
+				}
+				else if (!auth.enforceValidCredentials("drops-admin"))
 					return;
 				if (req.matches(HttpVerb.GET, "/admin/cardpacks"))
 				{
@@ -517,7 +539,7 @@ public final class ExampleBot
 				{
 					String resp = accountHTML
 								.replaceAll("\\Q<<>>USERNAME<<>>\\E", auth.username)
-								.replaceAll("\\Q<<>>AUTH_URL<<>>\\E", auth.authPath)
+								.replaceAll("\\Q<<>>AUTH_URL<<>>\\E", (localUserBypass?("127.0.0.1:" + settings.serverPort):auth.authPath))
 								.replaceAll("\\Q<<>>BOT_ADD_URL<<>>\\E", "https://discordapp.com/api/oauth2/authorize?client_id=" + settings.botClientId + "&permissions=243336208192&scope=bot");
 					req.respond(resp);
 				}
