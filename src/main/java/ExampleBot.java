@@ -19,6 +19,7 @@ public final class ExampleBot
 {
 	public static final String DATABASE_LOCATION = "/www/drops.0k.rip/dropdatabase.db";
 	public static final String STATIC_WEB_RESOURCE_LOCATION = "/www/drops.0k.rip";
+	public static final int WEB_SERVER_STARTUP_TIMES_TO_RETRY = 3;
 	
 	// populated from SQL database
 	public static Settings settings;
@@ -47,7 +48,30 @@ public final class ExampleBot
 		
 		try
 		{
-			HttpServer server = new HttpServer(settings.serverPort);
+			HttpServer server = null;
+			for (int i = 0; i < (WEB_SERVER_STARTUP_TIMES_TO_RETRY+1); i++)
+			{
+				try
+				{
+					server = new HttpServer(settings.serverPort);
+				}
+				catch (Exception ex)
+				{
+					ex.printStackTrace();
+					if (i == WEB_SERVER_STARTUP_TIMES_TO_RETRY)
+					{
+						System.out.println("Web server init failed, terminating the program. (attempt " + (i+1) + "/" + (WEB_SERVER_STARTUP_TIMES_TO_RETRY+1) + ").");
+						System.out.println("Note: neither the web server nor the Discord bot will run, the entire program is being terminated.");
+						System.exit(0);
+					}
+					try
+					{
+						System.out.println("Web server init failed, waiting 1 second before trying again. (attempt " + (i+1) + "/" + (WEB_SERVER_STARTUP_TIMES_TO_RETRY+1) + ").");
+						Thread.sleep(1000);
+					}
+					catch (Exception ex2){}
+				}
+			}
 			AuthHandler auth = new AuthHandler(settings.authHandler);
 			auth.maxlifetime = -1;	// don't let auth tokens time out to prevent people editing forms but not saving due to being bakas from losing their work
 			auth.registerCallbackEndpoint("/auth/callback");
