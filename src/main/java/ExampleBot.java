@@ -36,7 +36,7 @@ public final class ExampleBot
 	public static final Random rand = new Random();
 	public static Connection connection;
 	public static Statement statement;
-	public static String cardHTML, settingsHTML, cardPackHTML, infoFieldHTML;
+	public static String cardHTML, settingsHTML, cardPackHTML, infoFieldHTML, accountHTML;
 	
 	public static void main(final String[] args) throws SQLException
 	{
@@ -56,6 +56,7 @@ public final class ExampleBot
 			settingsHTML = SysUtils.readTextFile(Paths.get(STATIC_WEB_RESOURCE_LOCATION, "settings.html").toFile(), java.nio.charset.StandardCharsets.UTF_8);
 			cardPackHTML = SysUtils.readTextFile(Paths.get(STATIC_WEB_RESOURCE_LOCATION, "cardpacks.html").toFile(), java.nio.charset.StandardCharsets.UTF_8);
 			infoFieldHTML = SysUtils.readTextFile(Paths.get(STATIC_WEB_RESOURCE_LOCATION, "infofields.html").toFile(), java.nio.charset.StandardCharsets.UTF_8);
+			accountHTML = SysUtils.readTextFile(Paths.get(STATIC_WEB_RESOURCE_LOCATION, "account.html").toFile(), java.nio.charset.StandardCharsets.UTF_8);
 			
 			server.accept((req) -> {
 				if (auth.handle(req, "drops-admin"))
@@ -469,6 +470,23 @@ public final class ExampleBot
 								.replaceAll("\\Q<<>>cardsFolder<<>>\\E", settings.cardsFolder)
 								.replaceAll("\\Q<<>>BOT_ADD_URL<<>>\\E", "https://discordapp.com/api/oauth2/authorize?client_id=" + settings.botClientId + "&permissions=243336208192&scope=bot");
 					req.respond(resp);
+				}
+				else if (req.matches(HttpVerb.GET, "/admin/account"))
+				{
+					String resp = accountHTML
+								.replaceAll("\\Q<<>>USERNAME<<>>\\E", auth.username)
+								.replaceAll("\\Q<<>>AUTH_URL<<>>\\E", auth.authPath)
+								.replaceAll("\\Q<<>>BOT_ADD_URL<<>>\\E", "https://discordapp.com/api/oauth2/authorize?client_id=" + settings.botClientId + "&permissions=243336208192&scope=bot");
+					req.respond(resp);
+				}
+				else if (req.matches(HttpVerb.POST, "/admin/account/logout"))
+				{
+					auth.logout();
+					req.respondWithHeaders1(
+						HttpStatus.TEMPORARY_REDIRECT_302,
+						"Redirecting you to <a href=\"/\">the homepage</a>",
+						"Location: /"
+					);
 				}
 				else if (req.matches(HttpVerb.POST, "/admin/settings"))
 				{

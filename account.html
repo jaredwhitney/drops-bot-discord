@@ -185,105 +185,29 @@
 	<main class="l-main">
 	  <div class="p-strip--light" style="margin-bottom: 2.5rem;">
 		<div class="row">
-		  <p><h1>Card Packs</h1></p>
+		  <p><h1>My Account</h1></p>
 		</div>
 	  </div>
 	  <div class="row">
-			<div class="p-card--highlighted">
-				<div class="p-card__content u-vertically-center cardpack-add-trigger" style="height:5rem;">
+			<div class="p-card--highlighted" style="overflow:hidden;">
+				<div class="card__title">
+					<h3>Web Auth<h3>
+					</div>
+				<div class="p-card__content u-vertically-center infofield-add-trigger" style="height:5rem;">
 				<center>
-					<i class="p-icon--plus"></i>
 					<h4>
-						Add a new cardpack!
+						<i class="p-icon--user"></i> <<>>USERNAME<<>>@<<>>AUTH_URL<<>>
 					</h4>
 				</center>
+				<form class="p-form p-form--stacked" action="/admin/account/logout" method="post" enctype="multipart/form-data">
+					<button class="p-button--negative" style="width:100%;">Log out</button>
+				</form>
 				</div>
 			</div>
 	  </div>
-	  <div class="row" id="cardPackContainer">
-	  </div>
 	  </main>
-    <aside id="add-aside" class="l-aside is-collapsed" id="aside-panel">
-	<div class="p-panel">
-	<div class="p-panel__header">
-	<h4 class="p-panel__title">New card pack</h4>
-	<div class="p-panel__controls">
-	  <button id="add-aside-close" class="p-button--base u-no-margin--bottom has-icon"><i class="p-icon--close"></i></button>
-	</div>
-	</div>
-      <div class="p-panel__content">
-		<form class="p-form p-form--stacked" action="/admin/cardpacks/add" method="post" enctype="multipart/form-data">
-			<fieldset>
-				<label for="packName" class="is-required">Card Pack Name</label>
-				<input class="p-form__input" type="text" name="packName" id="packName" required="" value="" style="box-sizing: border-box;width: 100%;"></input>
-				<button class="p-button--positive">Add cardpack</button>
-			</fieldset>
-		</form>
-	</div>
-  </div>
-  </aside>
 	  </div>
 	  </div>
-	  <script>
-	      var addAside = document.getElementById('add-aside');
-		  var asideClose = document.getElementById('add-aside-close');
-		  var addTriggers = document.querySelectorAll('.cardpack-add-trigger');
-		  var cardPackContainer = document.getElementById('cardPackContainer');
-		  
-		  <<>>DATA_LOC<<>>
-		  
-		  /*var data = {
-			"My Hero Academia": 4,
-			"League of Legends": 0
-		  };*/
-		  
-		  for (cardPack in data) {
-			var card = document.createElement("div");
-			card.setAttribute("class", "p-card--highlighted");
-			var header1 = document.createElement("h3");
-			header1.setAttribute("class", "card__title");
-			header1.innerHTML = cardPack;
-			var header2 = document.createElement("h5");
-			header2.innerHTML = "Pack contents: " + data[cardPack] + (data[cardPack]==1?" card":" cards");
-			var content = document.createElement("p");
-			content.setAttribute("class", "card__content");
-			var form = document.createElement("form");
-			form.setAttribute("class", "p-form p-form--stacked");
-			form.setAttribute("action", "/admin/cardpacks/remove");
-			form.setAttribute("method", "post");
-			form.setAttribute("enctype", "multipart/form-data");
-			var button = document.createElement("button");
-			button.setAttribute("class", "p-button--negative");
-			button.innerHTML = "Delete card pack";
-			if (data[cardPack] > 0)
-			{
-				button.setAttribute("class", "p-button--negative is-disabled");
-			}
-			var input = document.createElement("input");
-			input.setAttribute("name", "packName");
-			input.setAttribute("type", "hidden");
-			input.setAttribute("value", cardPack);
-			card.appendChild(header1);
-			card.appendChild(header2);
-			card.appendChild(content);
-			content.appendChild(form);
-			form.appendChild(button);
-			form.appendChild(input);
-			cardPackContainer.appendChild(card);
-		  }
-		  
-		  for (elem of addTriggers) {
-			elem.addEventListener('click', function () {
-				addAside.classList.remove('is-collapsed');
-				document.getElementById('packName').value = null;
-			})
-		  }
-
-		  if (asideClose) {
-			asideClose.addEventListener('click', function () {
-			  addAside.classList.add('is-collapsed');
-			});
-		  }
-	  </script>
 	  </body>
 	  </html>
+
