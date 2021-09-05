@@ -119,10 +119,12 @@ public final class ExampleBot
 						return;
 					}
 					req.respondWithFile(filePath);
+					return;
 				}
 				else if (req.matches(HttpVerb.GET, "/img/botprofile.png") || req.matches(HttpVerb.GET, "/favicon.ico"))
 				{
 					req.respondRaw(botProfile);
+					return;
 				}
 				else if (req.matches(HttpVerb.GET, "/") || req.matches(HttpVerb.GET, "/index.html"))
 				{
