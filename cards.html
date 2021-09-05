@@ -180,9 +180,11 @@
 		</div>
 		</header>
 	<main class="l-main">
-	  <div class="row">
-		  <p><h1>All Cards</h1></p>
-		</div>
+	  <div class="p-strip--light" style="margin-bottom: 2.5rem;">
+		  <div class="row">
+			  <p><h1>All Cards</h1></p>
+		  </div>
+	  </div>
 	  <div id="cardspane" class="row u-equal-height">
 			<div class="col-2">
 				<div class="p-card--highlighted u-vertically-center card-add-trigger" style="height:100%">
@@ -210,9 +212,9 @@
 		<form class="p-form p-form--inline" action="/admin/cards/edit" method="post" enctype="multipart/form-data">
 			<fieldset>
 				<label for="displayName" class="is-required">Display Name</label>
-				<input name="displayName" id="displayName" required="" value="~NULL~" style="box-sizing: border-box;width: 100%;"></input>
+				<input class="p-form__input" type="text"name="displayName" id="displayName" required="" value="~NULL~" style="box-sizing: border-box;width: 100%;"></input>
 				<label for="displayDescription">Display Description</label>
-				<input name="displayDescription" id="displayDescription" value="~NULL~" style="box-sizing: border-box;width: 100%;"></input>
+				<input class="p-form__input" type="text"name="displayDescription" id="displayDescription" value="~NULL~" style="box-sizing: border-box;width: 100%;"></input>
 				<label for="cardPack">Card Pack</label>
 				<select name="cardPack" class="card-pack-selector" id="cardPack" style="box-sizing: border-box;width: 100%;">
 				</select>
@@ -242,9 +244,9 @@
 		<form class="p-form p-form--stacked" action="/admin/cards/add" method="post" enctype="multipart/form-data">
 			<fieldset>
 				<label for="cardAddDisplayName" class="is-required">Display Name</label>
-				<input name="displayName" id="cardAddDisplayName" required="" value="" style="box-sizing: border-box;width: 100%;"></input>
+				<input class="p-form__input" type="text"name="displayName" id="cardAddDisplayName" required="" value="" style="box-sizing: border-box;width: 100%;"></input>
 				<label for="cardAddDisplayDescription">Display Description</label>
-				<input name="displayDescription" id="cardAddDisplayDescription" value="" style="box-sizing: border-box;width: 100%;"></input>
+				<input class="p-form__input" type="text"name="displayDescription" id="cardAddDisplayDescription" value="" style="box-sizing: border-box;width: 100%;"></input>
 				<label for="cardAddImage" class="is-required">Card image</label>
 				<input name="cardImage" id="cardAddImage" type="file" required="" style="box-sizing: border-box;width: 100%;"></input>
 				<label for="cardAddcardPack" class="is-required">Card Pack</label>
@@ -437,6 +439,8 @@
 				keyEntry.appendChild(keyOptn);
 			}
 			var keyValue = document.createElement('input');
+			keyValue.setAttribute("class", "p-form__input");
+			keyValue.setAttribute("type", "text");
 			keyValue.setAttribute("name", "extra-info-value-" + sid);
 			keyValue.setAttribute("required","");
 			if (value) keyValue.setAttribute("value",value);

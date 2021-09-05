@@ -36,7 +36,7 @@ public final class ExampleBot
 	public static final Random rand = new Random();
 	public static Connection connection;
 	public static Statement statement;
-	public static String cardHTML;
+	public static String cardHTML, settingsHTML;
 	
 	public static void main(final String[] args) throws SQLException
 	{
@@ -50,7 +50,10 @@ public final class ExampleBot
 			HttpServer server = new HttpServer(settings.serverPort);
 			AuthHandler auth = new AuthHandler(settings.authHandler);
 			auth.registerCallbackEndpoint("/auth/callback");
+			
 			cardHTML = SysUtils.readTextFile(Paths.get(STATIC_WEB_RESOURCE_LOCATION, "cards.html").toFile(), java.nio.charset.StandardCharsets.UTF_8);
+			settingsHTML = SysUtils.readTextFile(Paths.get(STATIC_WEB_RESOURCE_LOCATION, "settings.html").toFile(), java.nio.charset.StandardCharsets.UTF_8);
+			
 			server.accept((req) -> {
 				if (auth.handle(req, "drops-admin"))
 					return;
@@ -428,28 +431,19 @@ public final class ExampleBot
 				}
 				else if (req.matches(HttpVerb.GET, "/admin/settings"))
 				{
-					String resp = "<body>";
-					resp += "<form enctype=\"multipart/form-data\" action=\"/admin/settings\" method=\"post\">";
-					resp += "<h1>Settings</h1>";
-					resp += "<h2>Drops</h2>";
-					resp += "Number of cards to drop at once: <input name=\"dropNumCards\" value=\"" + settings.dropNumCards + "\"/><br>";
-					resp += "Drop cooldown (milliseconds): <input name=\"dropCooldownMillis\" value=\"" + settings.dropCooldownMillis + "\"/><br>";
-					resp += "<h2>Dungeon</h2>";
-					resp += "Number of dungeon answers to choose from: <input name=\"dungeonOptions\" value=\"" + settings.dungeonOptions + "\"/><br>";
-					resp += "Dungeon cooldown (milliseconds): <input name=\"dungeonCooldownMillis\" value=\"" + settings.dungeonCooldownMillis + "\"/><br>";
-					resp += "<h2>Bot Config</h2>";
-					resp += "Bot prefix: <input name=\"botPrefix\" value=\"" + settings.botPrefix + "\"/><br>";
-					resp += "Bot client ID: <input name=\"botClientId\" value=\"" + settings.botClientId + "\"/><br>";
-					resp += "Bot token (RESTART REQUIRED): <input name=\"botToken\" value=\"" + settings.botToken + "\"/><br>";
-					resp += "<h2>App Config (RESTART REQUIRED for all)</h2>";
-					resp += "Local Port: <input name=\"serverPort\" value=\"" + settings.serverPort + "\"/><br>";
-					resp += "Public URL: <input name=\"siteUrl\" value=\"" + settings.siteUrl + "\"/><br>";
-					resp += "Auth Handler Public URL: <input name=\"authHandler\" value=\"" + settings.authHandler + "\"/><br>";
-					resp += "Card Images Folder: <input name=\"cardsFolder\" value=\"" + settings.cardsFolder + "\"/><br>";
-					resp += "<input type=\"submit\" value=\"Save changes\"/>";
-					resp += "</form>";
-					resp += "<a href=\"/\">Cancel</a>";
-					resp += "</body>";
+					String resp = settingsHTML
+								.replaceAll("\\Q<<>>dropNumCards<<>>\\E", settings.dropNumCards)
+								.replaceAll("\\Q<<>>dropCooldownMillis<<>>\\E", settings.dropCooldownMillis)
+								.replaceAll("\\Q<<>>dungeonOptions<<>>\\E", settings.dungeonOptions)
+								.replaceAll("\\Q<<>>dungeonCooldownMillis<<>>\\E", settings.dungeonCooldownMillis)
+								.replaceAll("\\Q<<>>botPrefix<<>>\\E", settings.botPrefix)
+								.replaceAll("\\Q<<>>botClientId<<>>\\E", settings.botClientId)
+								.replaceAll("\\Q<<>>botToken<<>>\\E", settings.botToken)
+								.replaceAll("\\Q<<>>serverPort<<>>\\E", settings.serverPort)
+								.replaceAll("\\Q<<>>siteUrl<<>>\\E", settings.siteUrl)
+								.replaceAll("\\Q<<>>authHandler<<>>\\E", settings.authHandler)
+								.replaceAll("\\Q<<>>cardsFolder<<>>\\E", settings.cardsFolder)
+								.replaceAll("\\Q<<>>BOT_ADD_URL<<>>\\E", "https://discordapp.com/api/oauth2/authorize?client_id=" + settings.botClientId + "&permissions=243336208192&scope=bot");
 					req.respond(resp);
 				}
 				else if (req.matches(HttpVerb.POST, "/admin/settings"))
