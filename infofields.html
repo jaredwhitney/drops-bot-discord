@@ -209,7 +209,7 @@
 	</div>
 	</div>
       <div class="p-panel__content">
-		<form class="p-form p-form--stacked" action="/admin/cardpacks/add" method="post" enctype="multipart/form-data">
+		<form class="p-form p-form--stacked" action="/admin/infofield/add" method="post" enctype="multipart/form-data">
 			<fieldset>
 				<label for="keyName" class="is-required">Field key</label>
 				<input class="p-form__input" type="text" name="keyName" id="keyName" required="" placeholder="hero_power" value="" style="box-sizing: border-box;width: 100%;"></input>
@@ -275,7 +275,7 @@
 			content.setAttribute("class", "card__content");
 			var form = document.createElement("form");
 			form.setAttribute("class", "p-form p-form--stacked");
-			form.setAttribute("action", "/admin/cardpacks/remove");
+			form.setAttribute("action", "/admin/infofield/remove");
 			form.setAttribute("method", "post");
 			form.setAttribute("enctype", "multipart/form-data");
 			var button = document.createElement("button");
