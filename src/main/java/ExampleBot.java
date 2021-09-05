@@ -354,17 +354,16 @@ public final class ExampleBot
 				{
 					try
 					{
-						String ret = "<body>";
-						ret += "<form enctype=\"multipart/form-data\" action=\"/admin/infofield/add\" method=\"post\">Key: <input name=\"keyName\"> QuestionFormat: <input name=\"questionFormat\"><input type=\"submit\" value=\"add entry\"/></form>";
+						String data = "var data = {\n";
 						for (CardInfoField field : cardInfoFields.values())
 						{
-							String hiddenInputs = "<input type=\"hidden\" value=\"" + field.keyName + "\" name=\"keyName\"/>";
-							ret += "<form enctype=\"multipart/form-data\" action=\"/admin/infofield/remove\" method=\"post\"><input type=\"submit\" value=\"remove entry\">" + hiddenInputs + "</form>";
-							ret += "Key: " + field.keyName + " <form enctype=\"multipart/form-data\" action=\"/admin/infofield/edit\" method=\"post\">QuestionFormat: <input name=\"questionFormat\" value=\"" + field.questionFormat + "\">" + hiddenInputs + "<input type=\"submit\" value=\"update\"/></form>";
-							ret += "<br>";
+							data += "\t\"" + field.keyName + "\": { \"keyName\": \"" + field.keyName + "\", \"questionFormat\": \"" + field.questionFormat + "\", \"numEntries\": " + field.entries.size() + " },\n";
 						}
-						ret += "</body>";
-						req.respond(ret);
+						data += "};";
+						String resp = cardPackHTML
+									.replaceAll("\\Q<<>>DATA_LOC<<>>\\E", data)
+									.replaceAll("\\Q<<>>BOT_ADD_URL<<>>\\E", "https://discordapp.com/api/oauth2/authorize?client_id=" + settings.botClientId + "&permissions=243336208192&scope=bot");
+						req.respond(resp);
 					}
 					catch (Exception ex)
 					{
