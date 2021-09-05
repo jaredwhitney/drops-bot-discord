@@ -432,10 +432,10 @@ public final class ExampleBot
 				else if (req.matches(HttpVerb.GET, "/admin/settings"))
 				{
 					String resp = settingsHTML
-								.replaceAll("\\Q<<>>dropNumCards<<>>\\E", settings.dropNumCards)
-								.replaceAll("\\Q<<>>dropCooldownMillis<<>>\\E", settings.dropCooldownMillis)
-								.replaceAll("\\Q<<>>dungeonOptions<<>>\\E", settings.dungeonOptions)
-								.replaceAll("\\Q<<>>dungeonCooldownMillis<<>>\\E", settings.dungeonCooldownMillis)
+								.replaceAll("\\Q<<>>dropNumCards<<>>\\E", settings.dropNumCards+"")
+								.replaceAll("\\Q<<>>dropCooldownMillis<<>>\\E", settings.dropCooldownMillis+"")
+								.replaceAll("\\Q<<>>dungeonOptions<<>>\\E", settings.dungeonOptions+"")
+								.replaceAll("\\Q<<>>dungeonCooldownMillis<<>>\\E", settings.dungeonCooldownMillis+"")
 								.replaceAll("\\Q<<>>botPrefix<<>>\\E", settings.botPrefix)
 								.replaceAll("\\Q<<>>botClientId<<>>\\E", settings.botClientId)
 								.replaceAll("\\Q<<>>botToken<<>>\\E", settings.botToken)
