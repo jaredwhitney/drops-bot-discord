@@ -436,7 +436,7 @@
 			for (key of keys) {
 				var keyOptn = document.createElement('option');
 				keyOptn.setAttribute("value", key["raw"]);
-				if (key == skey) keyOptn.setAttribute("selected", "");
+				if (key["raw"] == skey) keyOptn.setAttribute("selected", "");
 				keyOptn.innerHTML = key["display"];
 				keyEntry.appendChild(keyOptn);
 			}
