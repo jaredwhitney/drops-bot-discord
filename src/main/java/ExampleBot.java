@@ -99,9 +99,9 @@ public final class ExampleBot
 					String data = "var data = {\n";
 					for (CardPack pack : cardPacks.values())
 					{
-						data += "\t\"" + pack.packName + "\": " + pack.cards.size() + ",\n"
+						data += "\t\"" + pack.packName + "\": " + pack.cards.size() + ",\n";
 					}
-					data += "};"
+					data += "};";
 					String resp = cardPackHTML
 								.replaceAll("\\Q<<>>DATA_LOC<<>>\\E", data)
 								.replaceAll("\\Q<<>>BOT_ADD_URL<<>>\\E", "https://discordapp.com/api/oauth2/authorize?client_id=" + settings.botClientId + "&permissions=243336208192&scope=bot");
