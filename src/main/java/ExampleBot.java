@@ -36,7 +36,7 @@ public final class ExampleBot
 	public static final Random rand = new Random();
 	public static Connection connection;
 	public static Statement statement;
-	public static String cardHTML, settingsHTML;
+	public static String cardHTML, settingsHTML, cardPackHTML;
 	
 	public static void main(final String[] args) throws SQLException
 	{
@@ -49,10 +49,12 @@ public final class ExampleBot
 		{
 			HttpServer server = new HttpServer(settings.serverPort);
 			AuthHandler auth = new AuthHandler(settings.authHandler);
+			auth.maxlifetime = -1;	// don't let auth tokens time out to prevent people editing forms but not saving due to being bakas from losing their work
 			auth.registerCallbackEndpoint("/auth/callback");
 			
 			cardHTML = SysUtils.readTextFile(Paths.get(STATIC_WEB_RESOURCE_LOCATION, "cards.html").toFile(), java.nio.charset.StandardCharsets.UTF_8);
 			settingsHTML = SysUtils.readTextFile(Paths.get(STATIC_WEB_RESOURCE_LOCATION, "settings.html").toFile(), java.nio.charset.StandardCharsets.UTF_8);
+			cardPackHTML = SysUtils.readTextFile(Paths.get(STATIC_WEB_RESOURCE_LOCATION, "cardpacks.html").toFile(), java.nio.charset.StandardCharsets.UTF_8);
 			
 			server.accept((req) -> {
 				if (auth.handle(req, "drops-admin"))
@@ -94,14 +96,15 @@ public final class ExampleBot
 					return;
 				if (req.matches(HttpVerb.GET, "/admin/cardpacks"))
 				{
-					String resp = "<body>";
-					resp += "<a href=\"/admin/cardpacks/add\">Create a new cardpack</a><br>";
-					resp += "<h1>Card packs</h1>";
+					String data = "var data = {\n";
 					for (CardPack pack : cardPacks.values())
 					{
-						resp += "<a href=\"/admin/cardpack?name=" + pack.packName + "\">" + pack.packName + " (" + pack.cards.size() + " cards)</a><br>";
+						data += "\t\"" + pack.packName + "\": " + pack.cards.size() + ",\n"
 					}
-					resp += "</body>";
+					data += "};"
+					String resp = cardPackHTML
+								.replaceAll("\\Q<<>>DATA_LOC<<>>\\E", data)
+								.replaceAll("\\Q<<>>BOT_ADD_URL<<>>\\E", "https://discordapp.com/api/oauth2/authorize?client_id=" + settings.botClientId + "&permissions=243336208192&scope=bot");
 					req.respond(resp);
 				}
 				else if (req.matches(HttpVerb.GET, "/admin/cardpacks/add"))
@@ -124,6 +127,26 @@ public final class ExampleBot
 						cardPack.packName = cardPackName;
 						cardPack.handleAdd();
 						cardPacks.put(cardPack.packName, cardPack);
+						req.respondWithHeaders1(
+							HttpStatus.TEMPORARY_REDIRECT_302,
+							"Redirecting you to <a href=\"/admin/cardpack?name=" + cardPackName + "\">/admin/cardpack?name=" + cardPackName + "</a>",
+							"Location: /admin/cardpack?name=" + cardPackName
+						);
+					}
+					catch (SQLException ex)
+					{
+						req.respond("Internal error: " + ex.getMessage());
+						ex.printStackTrace();
+					}
+				}
+				else if (req.matches(HttpVerb.POST, "/admin/cardpacks/remove"))
+				{
+					try
+					{
+						String cardPackName = new String(req.getMultipart("packName")[0].filedata, java.nio.charset.StandardCharsets.UTF_8).trim();
+						CardPack cardPack = cardPacks.get(cardPackName);
+						cardPack.handleRemove();
+						cardPacks.remove(cardPack.packName);
 						req.respondWithHeaders1(
 							HttpStatus.TEMPORARY_REDIRECT_302,
 							"Redirecting you to <a href=\"/admin/cardpack?name=" + cardPackName + "\">/admin/cardpack?name=" + cardPackName + "</a>",
@@ -1148,7 +1171,12 @@ class CardPack extends DBEnabledClass
 	}
 	void removeFromDatabase() throws SQLException
 	{
-		throw new RuntimeException("Card Packs currently cannot be deleted.");
+		if (cards.size() > 0)
+			throw new RuntimeException("Not going to remove this card pack: it's still being used by " + cards.size() + " cards!");
+		connection.createStatement().executeUpdate(
+			"DELETE FROM cardPack"
+			+ " WHERE packName = '" + packName + "'"
+		);
 	}
 	void removeFromObjects() {}
 }
