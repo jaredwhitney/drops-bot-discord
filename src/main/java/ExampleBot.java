@@ -123,7 +123,7 @@ public final class ExampleBot
 				}
 				else if (req.matches(HttpVerb.GET, "/img/botprofile.png") || req.matches(HttpVerb.GET, "/favicon.ico"))
 				{
-					req.respondRaw(botProfile);
+					req.respond("image/png", botProfile);
 					return;
 				}
 				else if (req.matches(HttpVerb.GET, "/") || req.matches(HttpVerb.GET, "/index.html"))
