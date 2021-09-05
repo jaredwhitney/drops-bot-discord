@@ -17,8 +17,7 @@ import java.sql.*;
 
 public final class ExampleBot
 {
-	public static final String DATABASE_LOCATION = "/www/drops.0k.rip/dropdatabase.db";
-	public static final String STATIC_WEB_RESOURCE_LOCATION = "/www/drops.0k.rip";
+	public static final File DATABASE_LOCATION_FILE = new File("drops-db-path.cfg");
 	public static final int WEB_SERVER_STARTUP_TIMES_TO_RETRY = 3;
 	
 	// populated from SQL database
@@ -31,6 +30,7 @@ public final class ExampleBot
 	public static Map<String,CardInfoFieldEntry> cardInfoFieldEntries = new HashMap<String,CardInfoFieldEntry>();
 	
 	// need no population from SQL database
+	public static String databaseLocation;
 	public static Map<User,PendingDropInfo> pendingDropInfo = new HashMap<User,PendingDropInfo>();
 	public static Map<User,PendingDungeonInfo> pendingDungeonInfo = new HashMap<User,PendingDungeonInfo>();
 	public static Map<String,RenderedImageStorage> renderedImageCache = new HashMap<String,RenderedImageStorage>();
@@ -41,6 +41,21 @@ public final class ExampleBot
 	
 	public static void main(final String[] args) throws SQLException
 	{
+		
+		if (args.length > 0)
+		{
+			databaseLocation = args[0];
+		}
+		else
+		{
+			databaseLocation = SysUtils.readTextFile(DATABASE_LOCATION_FILE, java.nio.charset.StandardCharsets.UTF_8);
+			if (databaseLocation == null)
+			{
+				System.err.println("Couldn't figure out where you wanted the database to be stored; pass the file path as an argument or write it to \"" + DATABASE_LOCATION_FILE.getAbsolutePath() + "\".");
+				System.exit(0);
+			}
+			databaseLocation = databaseLocation.trim();
+		}
 		
 		DatabaseManager.connectToDatabase();
 		DatabaseManager.initAllTables();
@@ -79,11 +94,11 @@ public final class ExampleBot
 			auth.maxlifetime = -1;	// don't let auth tokens time out to prevent people editing forms but not saving due to being bakas from losing their work
 			auth.registerCallbackEndpoint("/auth/callback");
 			
-			cardHTML = SysUtils.readTextFile(Paths.get(STATIC_WEB_RESOURCE_LOCATION, "cards.html").toFile(), java.nio.charset.StandardCharsets.UTF_8);
-			settingsHTML = SysUtils.readTextFile(Paths.get(STATIC_WEB_RESOURCE_LOCATION, "settings.html").toFile(), java.nio.charset.StandardCharsets.UTF_8);
-			cardPackHTML = SysUtils.readTextFile(Paths.get(STATIC_WEB_RESOURCE_LOCATION, "cardpacks.html").toFile(), java.nio.charset.StandardCharsets.UTF_8);
-			infoFieldHTML = SysUtils.readTextFile(Paths.get(STATIC_WEB_RESOURCE_LOCATION, "infofields.html").toFile(), java.nio.charset.StandardCharsets.UTF_8);
-			accountHTML = SysUtils.readTextFile(Paths.get(STATIC_WEB_RESOURCE_LOCATION, "account.html").toFile(), java.nio.charset.StandardCharsets.UTF_8);
+			cardHTML = readResourceToString("cards.html");
+			settingsHTML = readResourceToString("settings.html");
+			cardPackHTML = readResourceToString("cardpacks.html");
+			infoFieldHTML = readResourceToString("infofields.html");
+			accountHTML = readResourceToString("account.html");
 			
 			server.accept((req) -> {
 				if (auth.handle(req, "drops-admin"))
@@ -565,7 +580,7 @@ public final class ExampleBot
 					req.respond(HttpStatus.NOT_FOUND_404);
 				}
 			});
-			System.out.println("The web server should be up and running!");
+			System.out.println("The web server should be up and running!\n\tLocal address: http://127.0.0.1:" + settings.serverPort);
 		}
 		catch (Exception ex)
 		{
@@ -925,6 +940,14 @@ public final class ExampleBot
 		}
 		
 	}
+	public static String readResourceToString(String resourceName) throws IOException
+	{
+		System.out.println("Read " + resourceName + " from the jar file");
+		InputStream in = ExampleBot.class.getResourceAsStream(resourceName); 
+		ByteArrayOutputStream os = new ByteArrayOutputStream();
+		in.transferTo(os);
+		return new String(os.toByteArray(), java.nio.charset.StandardCharsets.UTF_8);
+	}
 	public static <T> ArrayList<T> list(T... items)
 	{
 		return new ArrayList<T>(Arrays.asList(items));
@@ -1050,7 +1073,7 @@ class DatabaseManager
 	{
 		Properties properties = new Properties();
 		properties.setProperty("PRAGMA foreign_keys", "ON");
-		ExampleBot.connection = DriverManager.getConnection("jdbc:sqlite:" + ExampleBot.DATABASE_LOCATION, properties);
+		ExampleBot.connection = DriverManager.getConnection("jdbc:sqlite:" + new File(ExampleBot.databaseLocation).getAbsolutePath(), properties);
 	}
 	public static void initAllTables() throws SQLException
 	{
