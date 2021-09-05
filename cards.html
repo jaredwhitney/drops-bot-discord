@@ -430,7 +430,6 @@
 			group.setAttribute("class", "p-form__group");
 			var keyEntry = document.createElement('select');
 			keyEntry.setAttribute("name", "extra-info-key-" + sid);
-			keyEntry.setAttribute("style", "margin-bottom: 0px;");
 			for (key of keys) {
 				var keyOptn = document.createElement('option');
 				keyOptn.setAttribute("value", key["raw"]);
@@ -448,7 +447,6 @@
 			removeButton.setAttribute("class","p-button--negative");
 			removeButton.innerHTML = "Delete";
 			removeButton.setAttribute("type", "button");
-			removeButton.setAttribute("style", "margin-bottom: 0px;");
 			removeButton.addEventListener('click', function() {
 				if (this.getAttribute("class") == "p-button--negative") {
 					if (sid.includes("NEW_ASSIGN")) {
