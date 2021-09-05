@@ -439,7 +439,7 @@ public final class ExampleBot
 								.replaceAll("\\Q<<>>botPrefix<<>>\\E", settings.botPrefix)
 								.replaceAll("\\Q<<>>botClientId<<>>\\E", settings.botClientId)
 								.replaceAll("\\Q<<>>botToken<<>>\\E", settings.botToken)
-								.replaceAll("\\Q<<>>serverPort<<>>\\E", settings.serverPort)
+								.replaceAll("\\Q<<>>serverPort<<>>\\E", settings.serverPort+"")
 								.replaceAll("\\Q<<>>siteUrl<<>>\\E", settings.siteUrl)
 								.replaceAll("\\Q<<>>authHandler<<>>\\E", settings.authHandler)
 								.replaceAll("\\Q<<>>cardsFolder<<>>\\E", settings.cardsFolder)
