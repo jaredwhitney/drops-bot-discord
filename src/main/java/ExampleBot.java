@@ -36,7 +36,7 @@ public final class ExampleBot
 	public static final Random rand = new Random();
 	public static Connection connection;
 	public static Statement statement;
-	public static String cardHTML, settingsHTML, cardPackHTML;
+	public static String cardHTML, settingsHTML, cardPackHTML, infoFieldHTML;
 	
 	public static void main(final String[] args) throws SQLException
 	{
@@ -55,6 +55,7 @@ public final class ExampleBot
 			cardHTML = SysUtils.readTextFile(Paths.get(STATIC_WEB_RESOURCE_LOCATION, "cards.html").toFile(), java.nio.charset.StandardCharsets.UTF_8);
 			settingsHTML = SysUtils.readTextFile(Paths.get(STATIC_WEB_RESOURCE_LOCATION, "settings.html").toFile(), java.nio.charset.StandardCharsets.UTF_8);
 			cardPackHTML = SysUtils.readTextFile(Paths.get(STATIC_WEB_RESOURCE_LOCATION, "cardpacks.html").toFile(), java.nio.charset.StandardCharsets.UTF_8);
+			infoFieldHTML = SysUtils.readTextFile(Paths.get(STATIC_WEB_RESOURCE_LOCATION, "infofields.html").toFile(), java.nio.charset.StandardCharsets.UTF_8);
 			
 			server.accept((req) -> {
 				if (auth.handle(req, "drops-admin"))
@@ -360,7 +361,7 @@ public final class ExampleBot
 							data += "\t\"" + field.keyName + "\": { \"keyName\": \"" + field.keyName + "\", \"questionFormat\": \"" + field.questionFormat + "\", \"numEntries\": " + field.entries.size() + " },\n";
 						}
 						data += "};";
-						String resp = cardPackHTML
+						String resp = infoFieldHTML
 									.replaceAll("\\Q<<>>DATA_LOC<<>>\\E", data)
 									.replaceAll("\\Q<<>>BOT_ADD_URL<<>>\\E", "https://discordapp.com/api/oauth2/authorize?client_id=" + settings.botClientId + "&permissions=243336208192&scope=bot");
 						req.respond(resp);
