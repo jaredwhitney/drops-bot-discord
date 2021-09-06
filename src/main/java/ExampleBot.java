@@ -303,6 +303,7 @@ public final class ExampleBot
 						card.displayDescription = displayDescription;
 						card.cardPack = cardPacks.get(cardPack);
 						
+						System.out.println("Uploaded card was " + fileDesc.filedata);
 						Files.write(Paths.get(settings.cardsFolder, rawName), fileDesc.filedata);
 						card.handleAdd();
 						cardDefinitions.put(card.imageFilename, card);
