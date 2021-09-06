@@ -141,13 +141,18 @@ public final class ExampleBot
 					{
 						String[] packCards = req.parameters.split("\\Q&nonce=\\E")[0].split("\\+");
 						System.out.println(req.parameters.split("\\Q&nonce=\\E")[0]);
-						byte[] data = renderedImageCache.get(req.parameters.split("\\Q&nonce=\\E")[0]).cachedData;
-						if (data == null)
+						var dataContainer = renderedImageCache.get(req.parameters.split("\\Q&nonce=\\E")[0]);
+						byte[] data = null;
+						if (dataContainer == null)
 						{
 							BufferedImage combined = stitchImages(packCards);
 							ByteArrayOutputStream baos = new ByteArrayOutputStream();
 							ImageIO.write(combined, "webp", baos);
 							data = baos.toByteArray();
+						}
+						else
+						{
+							data = dataContainer.cachedData;
 						}
 						System.out.println("Send response");
 						req.respond("image/webp", data);
