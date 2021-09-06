@@ -973,14 +973,14 @@ public final class ExampleBot
 	}
 	public static String escapeString(String s)
 	{
-	  return s.replace("\\", "\\\\")
-			  .replace("\t", "\\t")
-			  .replace("\b", "\\b")
-			  .replace("\n", "\\n")
-			  .replace("\r", "\\r")
-			  .replace("\f", "\\f")
-			  .replace("\'", "\\'")
-			  .replace("\"", "\\\"");
+	  return s.replaceAll("\\", "\\\\")
+			  .replaceAll("\t", "\\t")
+			  .replaceAll("\b", "\\b")
+			  .replaceAll("\n", "\\n")
+			  .replaceAll("\r", "\\r")
+			  .replaceAll("\f", "\\f")
+			  .replaceAll("\'", "\\'")
+			  .replaceAll("\"", "\\\"");
 	}
 	public static String readResourceToString(String resourceName) throws IOException
 	{
