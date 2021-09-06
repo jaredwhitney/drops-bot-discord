@@ -4,9 +4,4 @@ To-Do:
 	form validation logic (error on duplicate key et-al)
 		as well as all the validation on the settings page
 	ability to view discord inventories?
-	ability to link discord acct for admin priveledges there?
-	add a form that uses no external files to enter external file locations
-		this should be the only thing that shows up for the respective UI pages if they are missing
-		these should be configurable in the settings page as well 
-			the settings page uses external files though, so they can't only be editable there
-		all other pages should show a warning banner about the missing files
+	ability to link discord acct for admin privileges there?
