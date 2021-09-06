@@ -173,7 +173,7 @@ public final class ExampleBot
 					String data = "var data = {\n";
 					for (CardPack pack : cardPacks.values())
 					{
-						data += "\t\"" + pack.packName + "\": " + pack.cards.size() + ",\n";
+						data += "\t\"" + escapeString(pack.packName) + "\": " + pack.cards.size() + ",\n";
 					}
 					data += "};";
 					String resp = cardPackHTML
@@ -252,17 +252,17 @@ public final class ExampleBot
 					String datajson = "var data = {\n";
 					for (CardDef card : cardDefinitions.values())
 					{
-						datajson += "\t\"" + card.imageFilename + "\": {\n";
-						datajson += "\t\t\"displayName\": \"" + card.displayName + "\",\n";
+						datajson += "\t\"" + escapeString(card.imageFilename) + "\": {\n";
+						datajson += "\t\t\"displayName\": \"" + escapeString(card.displayName) + "\",\n";
 						if (card.displayDescription != null)
-							datajson += "\t\t\"displayDescription\": \"" + card.displayDescription + "\",\n";
-						datajson += "\t\t\"image\": \"https://" + settings.siteUrl + "/card/" + card.imageFilename + "\",\n";
-						datajson += "\t\t\"cardPack\": \"" + card.cardPack.packName + "\",\n";
+							datajson += "\t\t\"displayDescription\": \"" + escapeString(card.displayDescription) + "\",\n";
+						datajson += "\t\t\"image\": \"https://" + escapeString(settings.siteUrl) + "/card/" + escapeString(card.imageFilename) + "\",\n";
+						datajson += "\t\t\"cardPack\": \"" + escapeString(card.cardPack.packName) + "\",\n";
 						datajson += "\t\t\"extraInfo\": [\n";
 						for (ArrayList<CardInfoFieldEntry> entryList : card.info.values())
 						{
 							for (CardInfoFieldEntry entry : entryList)
-								datajson += "\t\t\t{ \"id\": \"" + entry.id + "\", \"key\": \"" + entry.field.keyName + "\", \"value\": \"" + entry.value + "\" },\n";
+								datajson += "\t\t\t{ \"id\": \"" + entry.id + "\", \"key\": \"" + escapeString(entry.field.keyName) + "\", \"value\": \"" + escapeString(entry.value) + "\" },\n";
 						}
 						datajson += "\t\t]\n";
 						datajson += "},\n";
@@ -271,13 +271,13 @@ public final class ExampleBot
 					datajson += "var keys = [\n";
 					for (CardInfoField field : cardInfoFields.values())
 					{
-						datajson += "\t{ \"raw\": \"" + field.keyName + "\", \"display\": \"" + field.questionFormat + "\" },\n";
+						datajson += "\t{ \"raw\": \"" + escapeString(field.keyName) + "\", \"display\": \"" + escapeString(field.questionFormat) + "\" },\n";
 					}
 					datajson += "]\n";
 					datajson += "var packs = [\n";
 					for (CardPack pack : cardPacks.values())
 					{
-						datajson += "\t\"" + pack.packName + "\",\n";
+						datajson += "\t\"" + escapeString(pack.packName) + "\",\n";
 					}
 					datajson += "]";
 					String resp = cardHTML
@@ -432,7 +432,7 @@ public final class ExampleBot
 						String data = "var data = {\n";
 						for (CardInfoField field : cardInfoFields.values())
 						{
-							data += "\t\"" + field.keyName + "\": { \"keyName\": \"" + field.keyName + "\", \"questionFormat\": \"" + field.questionFormat + "\", \"numEntries\": " + field.entries.size() + " },\n";
+							data += "\t\"" + escapeString(field.keyName) + "\": { \"keyName\": \"" + escapeString(field.keyName) + "\", \"questionFormat\": \"" + escapeString(field.questionFormat) + "\", \"numEntries\": " + field.entries.size() + " },\n";
 						}
 						data += "};";
 						String resp = infoFieldHTML
@@ -970,6 +970,17 @@ public final class ExampleBot
 			System.out.println("Note: The web-server will continue running.");
 		}
 		
+	}
+	public static String escapeString(String s)
+	{
+	  return s.replace("\\", "\\\\")
+			  .replace("\t", "\\t")
+			  .replace("\b", "\\b")
+			  .replace("\n", "\\n")
+			  .replace("\r", "\\r")
+			  .replace("\f", "\\f")
+			  .replace("\'", "\\'")
+			  .replace("\"", "\\\"");
 	}
 	public static String readResourceToString(String resourceName) throws IOException
 	{
