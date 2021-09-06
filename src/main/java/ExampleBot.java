@@ -165,8 +165,7 @@ public final class ExampleBot
 					return;
 				}
 				boolean localUserBypass = false;
-				System.out.println(req.domain + " // " + (req.domain.equals("127.0.0.1:" + settings.serverPort)));
-				if (req.domain.equals("127.0.0.1:" + settings.serverPort))
+				if (req.isLocal())
 				{
 					auth.username = "Local User Bypass";
 					localUserBypass = true;
