@@ -103,7 +103,7 @@ public final class ExampleBot
 			botProfile = readResource("botprofile.png");
 			
 			server.accept((req) -> {
-				System.out.println("Request from " + req.domain + " remote addr " + req.getSocketRemoteAddr() + " for url " + req.url);
+				System.out.println("Request from " + req.domain + " remote addr " + req.getRemoteAddress() + " for url " + req.url);
 				if (auth.handle(req, "drops-admin"))
 					return;
 				if (req.matches(HttpVerb.GET, "/card/.*"))
