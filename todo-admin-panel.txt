@@ -1,7 +1,0 @@
-To-Do:
-	make card packs click-on-able
-		they are the only nonfunctional cards atm
-	form validation logic (error on duplicate key et-al)
-		as well as all the validation on the settings page
-	ability to view discord inventories?
-	ability to link discord acct for admin privileges there?

@@ -1,5 +1,0 @@
-train cards
-different rarity for cards
-merge cards
-trade cards
-card borders?
