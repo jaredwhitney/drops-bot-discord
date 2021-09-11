@@ -57,6 +57,9 @@ Type `,help` (replacing `,` with whatever prefix you have set in the web server)
 
 # Development
 
+### Trello Board
+https://trello.com/b/GvQsiItV/drops-bot
+
 ### Prerequisites
 - Gradle (version 7.2 or higher)
 
