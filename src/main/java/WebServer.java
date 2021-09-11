@@ -155,17 +155,6 @@ class WebServer
 								.replaceAll("\\Q<<>>BOT_ADD_URL<<>>\\E", "https://discordapp.com/api/oauth2/authorize?client_id=" + dm.settings.botClientId + "&permissions=243336208192&scope=bot");
 					req.respond(resp);
 				}
-				else if (req.matches(HttpVerb.GET, "/admin/cardpacks/add"))
-				{
-					String resp = "<body>"
-						+ "<form enctype=\"multipart/form-data\" action=\"/admin/cardpacks/add\" method=\"post\">"
-							+ "Cardpack Name: <input name=\"packName\"/><br>"
-							+ "<input type=\"submit\" value=\"Create card pack!\">"
-						+ "</form>"
-						+ "<a href=\"/admin/cardpacks\">Cancel</a>"
-						+ "</body>";
-					req.respond(resp);
-				}
 				else if (req.matches(HttpVerb.POST, "/admin/cardpacks/add"))
 				{
 					try
@@ -204,20 +193,6 @@ class WebServer
 						req.respond("Internal error: " + ex.getMessage());
 						ex.printStackTrace();
 					}
-				}
-				else if (req.matches(HttpVerb.GET, "/admin/cardpack"))
-				{
-					String pack = req.getParam("name");
-					String resp = "<body>";
-					resp += "<h1>Card pack: " + pack + "</h1>";
-					resp += "<a href=\"/admin/cards/add?pack=" + pack + "\">Add a new card to this pack</a><br>";
-					resp += "<h2>Pack cards:</h2>";
-					for (CardDef card : dm.cardPacks.get(pack).cards.values())
-					{
-						resp += "<a href-\"/admin/card?name=" + card.imageFilename + "\">" + card.displayName + "</a><br>";
-					}
-					resp += "</body>";
-					req.respond(resp);
 				}
 				else if (req.matches(HttpVerb.GET, "/admin/cards"))
 				{
@@ -276,7 +251,13 @@ class WebServer
 						card.cardPack = dm.cardPacks.get(cardPack);
 						
 						System.out.println("Uploaded card was " + fileDesc.filedata);
-						Files.write(Paths.get(dm.settings.cardsFolder, rawName), fileDesc.filedata);
+						Path destPath = Paths.get(dm.settings.cardsFolder, rawName);
+						if (!destPath.startsWith(Paths.get(dm.settings.cardsFolder).toAbsolutePath()))
+						{
+							req.respond(HttpStatus.NOT_FOUND_404);
+							return;
+						}
+						Files.write(destPath, fileDesc.filedata);
 						card.handleAdd();
 						
 						String redirectURL = (req.getParam("pack")==null ? "/admin/cards?name="+rawName : "/admin/cardpack?name=" + cardPack);
