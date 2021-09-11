@@ -8,13 +8,13 @@
 
 ### Run using a command-line argument
 ```bash
-java -jar AnotherDropBot-all.jar YOUR_DATABASE_FILE.db
+java -jar DropsBot.jar YOUR_DATABASE_FILE.db
 ```
 
 ### Run using a config file
 Put the database file path into "drops-db-path.cfg"
 ```bash
-java -jar AnotherDropBot-all.jar
+java -jar DropsBot.jar
 ```
 
 ### Settings to change (see Using the Web Server)
@@ -62,7 +62,7 @@ Type `,help` (replacing `,` with whatever prefix you have set in the web server)
 
 ### Building
 ```bash
-gradle build
+gradle build shadowJar
 ```
 
 ### Running using Gradle
@@ -71,5 +71,5 @@ gradle run --args=YOUR_DATABASE_FILE.db
 ```
 
 ### Running using the jar file
-Run the jar file at `build/libs/AnotherDropBot-all.jar` using the instructions from the "Running the Bot" section above -- this is the same jar file distributed in releases.
+Run the jar file at `build/libs/DropsBot.jar` using the instructions from the "Running the Bot" section above -- this is the same jar file distributed in releases.
 

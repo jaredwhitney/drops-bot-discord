@@ -25,9 +25,15 @@ java {
 
 jar {
     manifest {
-        attributes 'Main-Class': 'ExampleBot'
+        attributes 'Main-Class': 'DropsBot'
     }
+	baseName 'DropsBotNoDependencies'
 }
 
-mainClassName = 'ExampleBot'
+mainClassName = 'DropsBot'
 
+shadowJar {
+   archiveBaseName.set('DropsBot')
+   archiveClassifier.set('')
+   archiveVersion.set('')
+}
