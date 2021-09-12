@@ -166,7 +166,7 @@ class DiscordBot
 								.addField("ID", card.id, true)
 								.addField("Stars", card.stars+"", true)
 								.addField("Level", card.level+"", true)
-								.setImage(dm.settings.siteUrl + "/card/" + card.def.imageFilename)
+								.setImage(dm.settings.siteUrl + "/cardinst/" + card.id)
 								.setFooter("drops?", dm.settings.siteUrl + "/img/botprofile.png")
 								.setTimestamp(Instant.now())
 							).subscribe();

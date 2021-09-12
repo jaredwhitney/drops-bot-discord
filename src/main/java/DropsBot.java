@@ -2,11 +2,13 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import java.awt.Desktop;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.image.BufferedImage;
 import java.awt.MenuItem;
 import java.awt.PopupMenu;
 import java.awt.SystemTray;
 import java.awt.TrayIcon;
 import java.awt.TrayIcon.*;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.InputStream;
@@ -16,6 +18,7 @@ import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
+import javax.imageio.ImageIO;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileView;
 import javax.swing.ImageIcon;
@@ -373,6 +376,15 @@ public final class DropsBot
 	public static String readResourceToString(String resourceName) throws IOException
 	{
 		return new String(readResource(resourceName), UTF_8);
+	}
+	
+	/**
+	 * Reads a resource from the JAR file into a String
+	 */
+	public static BufferedImage readResourceToImage(String resourceName) throws IOException
+	{
+		ByteArrayInputStream bis = new ByteArrayInputStream(readResource(resourceName));
+		return ImageIO.read(bis);
 	}
 	
 	/**

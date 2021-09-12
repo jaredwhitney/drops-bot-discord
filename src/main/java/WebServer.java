@@ -77,23 +77,64 @@ class WebServer
 					return;
 				if (req.matches(HttpVerb.GET, "/card/.*"))
 				{
-					if (req.path.contains(".."))
+					try
+					{
+						if (req.path.contains(".."))
+						{
+							req.respond(HttpStatus.NOT_FOUND_404);
+							return;
+						}
+						if (dm.settings.cardsFolder.length() == 0)
+						{
+							req.respond(HttpStatus.NOT_FOUND_404);
+							return;
+						}
+						CardDef def = dm.cardDefinitions.get(req.path.substring("/card/".length()));
+						if (def == null)
+						{
+							req.respond(HttpStatus.NOT_FOUND_404);
+							return;
+						}
+						BufferedImage resp = Utils.getCardImage(dm, def);
+						ByteArrayOutputStream baos = new ByteArrayOutputStream();
+						ImageIO.write(resp, "webp", baos);
+						req.respond("image/webp", baos.toByteArray());
+					}
+					catch (Exception ex)
 					{
 						req.respond(HttpStatus.NOT_FOUND_404);
-						return;
 					}
-					if (dm.settings.cardsFolder.length() == 0)
+					return;
+				}
+				else if (req.matches(HttpVerb.GET, "/cardinst/.*"))
+				{
+					try
+					{
+						if (req.path.contains(".."))
+						{
+							req.respond(HttpStatus.NOT_FOUND_404);
+							return;
+						}
+						if (dm.settings.cardsFolder.length() == 0)
+						{
+							req.respond(HttpStatus.NOT_FOUND_404);
+							return;
+						}
+						CardInst inst = dm.cardInstances.get(req.path.substring("/cardinst/".length()));
+						if (inst == null)
+						{
+							req.respond(HttpStatus.NOT_FOUND_404);
+							return;
+						}
+						BufferedImage resp = Utils.getCardImage(dm, inst);
+						ByteArrayOutputStream baos = new ByteArrayOutputStream();
+						ImageIO.write(resp, "webp", baos);
+						req.respond("image/webp", baos.toByteArray());
+					}
+					catch (Exception ex)
 					{
 						req.respond(HttpStatus.NOT_FOUND_404);
-						return;
 					}
-					Path filePath = Paths.get(dm.settings.cardsFolder, req.path.substring("/card/".length())).toAbsolutePath();
-					if (!filePath.startsWith(Paths.get(dm.settings.cardsFolder).toAbsolutePath()) || !filePath.toFile().exists())
-					{
-						req.respond(HttpStatus.NOT_FOUND_404);
-						return;
-					}
-					req.respondWithFile(filePath);
 					return;
 				}
 				else if (req.matches(HttpVerb.GET, "/img/botprofile.png") || req.matches(HttpVerb.GET, "/favicon.ico"))
