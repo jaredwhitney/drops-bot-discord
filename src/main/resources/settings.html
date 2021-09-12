@@ -263,6 +263,34 @@
 </div>
 </div>
 <script>
+	function escapeHtml(unsafe) {
+		// see https://stackoverflow.com/a/6234804
+		return unsafe
+			 .replace(/&/g, "&amp;")
+			 .replace(/</g, "&lt;")
+			 .replace(/>/g, "&gt;")
+			 .replace(/"/g, "&quot;")
+			 .replace(/'/g, "&#039;");
+	}
+	
+	var data = {
+		"dropNumCards": <<>>dropNumCards<<>>,
+		"dropCooldownMillis": <<>>dropCooldownMillis<<>>,
+		"dungeonOptions": <<>>dungeonOptions<<>>,
+		"dungeonCooldownMillis": <<>>dungeonCooldownMillis<<>>,
+		"botPrefix": "<<>>botPrefix<<>>",
+		"botClientId": "<<>>botClientId<<>>",
+		"botToken": "<<>>botToken<<>>",
+		"serverPort": <<>>serverPort<<>>,
+		"siteUrl": "<<>>siteUrl<<>>",
+		"authHandler": "<<>>authHandler<<>>",
+		"cardsFolder": "<<>>cardsFolder<<>>"
+	}
+	
+	for (key of Object.entries(data)) {
+		document.getElementById(key[0]).value = key[1]
+	}
+	
 	var dropNumCardsSlider = document.getElementById('dropNumCards');
 	var dropNumCardsText = document.getElementById('dropNumCards-input');
 	dropNumCardsText.addEventListener('input', function() {

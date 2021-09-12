@@ -1,4 +1,5 @@
 import java.sql.SQLException;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.HashMap;
 import java.util.Map;
@@ -63,25 +64,33 @@ class User extends DBEnabledClass
 	
 	void addToDatabase() throws SQLException
 	{
-		dm.connection.createStatement().executeUpdate(
+		PreparedStatement statement = dm.connection.prepareStatement(
 			"INSERT INTO user ("
 				+ "userid, lastDropTime, lastDungeonTime"
 			+ ") VALUES ("
-				+ "'" + userId + "', " + lastDropTime + ", " + lastDungeonTime
+				+ "?, ?, ?"
 			+ ")"
 		);
+		statement.setString(1, userId);
+		statement.setLong(2, lastDropTime);
+		statement.setLong(3, lastDungeonTime);
+		statement.executeUpdate();
 	}
 	
 	void addToObjects() {}
 	
 	void updateInDatabase() throws SQLException
 	{
-		dm.connection.createStatement().executeUpdate(
+		PreparedStatement statement = dm.connection.prepareStatement(
 			"UPDATE user SET "
-			+ "lastDropTime = " + lastDropTime + ", "
-			+ "lastDungeonTime = " + lastDungeonTime
-			+ " WHERE userid = '" + userId + "'"
+			+ "lastDropTime = ?,"
+			+ "lastDungeonTime = ?"
+			+ " WHERE userid = ?"
 		);
+		statement.setLong(1, lastDropTime);
+		statement.setLong(2, lastDungeonTime);
+		statement.setString(3, userId);
+		statement.executeUpdate();
 	}
 	
 	void updateInObjects(DBEnabledClass previous) {}
@@ -94,10 +103,12 @@ class User extends DBEnabledClass
 	
 	void removeFromDatabase() throws SQLException
 	{
-		dm.connection.createStatement().executeUpdate(
+		PreparedStatement statement = dm.connection.prepareStatement(
 			"DELETE FROM user"
-			+ " WHERE userid = '" + userId + "'"
+			+ " WHERE userid = ?"
 		);
+		statement.setString(1, userId);
+		statement.executeUpdate();
 	}
 	
 	void removeFromObjects() {}

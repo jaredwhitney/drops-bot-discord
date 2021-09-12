@@ -1,4 +1,5 @@
 import java.sql.SQLException;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
 class CardInst extends DBEnabledClass
@@ -78,13 +79,19 @@ class CardInst extends DBEnabledClass
 	
 	void addToDatabase() throws SQLException
 	{
-		dm.connection.createStatement().executeUpdate(
+		PreparedStatement statement = dm.connection.prepareStatement(
 			"INSERT INTO cardInstance ("
 				+ "rawName, id, level, stars, owner"
 			+ ") VALUES ("
-				+ "'" + def.imageFilename + "', '" + id + "', '" + level + "', '" + stars + "', '" + owner.userId + "'"
+				+ "?, ?, ?, ?, ?"
 			+ ")"
 		);
+		statement.setString(1, def.imageFilename);
+		statement.setString(2, id);
+		statement.setInt(3, level);
+		statement.setInt(4, stars);
+		statement.setString(5, owner.userId);
+		statement.executeUpdate();
 	}
 	
 	void addToObjects()
@@ -95,14 +102,20 @@ class CardInst extends DBEnabledClass
 	
 	void updateInDatabase() throws SQLException
 	{
-		dm.connection.createStatement().executeUpdate(
+		PreparedStatement statement = dm.connection.prepareStatement(
 			"UPDATE cardInstance SET "
-				+ "rawName = '" + def.imageFilename + "',"
-				+ "level = '" + level + "',"
-				+ "stars = '" + stars + "'"
-				+ "owner = '" + owner.userId + "'"
-			+ " WHERE id = '" + id + "'"
+				+ "rawName = ?,"
+				+ "level = ?,"
+				+ "stars = ?,"
+				+ "owner = ?"
+			+ " WHERE id = ?"
 		);
+		statement.setString(1, def.imageFilename);
+		statement.setInt(2, level);
+		statement.setInt(3, stars);
+		statement.setString(4, owner.userId);
+		statement.setString(5, id);
+		statement.executeUpdate();
 	}
 	
 	void handleRemove() throws SQLException
@@ -113,10 +126,12 @@ class CardInst extends DBEnabledClass
 	
 	void removeFromDatabase() throws SQLException
 	{
-		dm.connection.createStatement().executeUpdate(
+		PreparedStatement statement = dm.connection.prepareStatement(
 			"DELETE FROM cardInstance"
-			+ " WHERE id = '" + id + "'"
+			+ " WHERE id = ?"
 		);
+		statement.setString(1, id);
+		statement.executeUpdate();
 	}
 	
 	void removeFromObjects()

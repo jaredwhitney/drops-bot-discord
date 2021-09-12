@@ -1,4 +1,5 @@
 import java.sql.SQLException;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.HashMap;
 import java.util.Map;
@@ -60,24 +61,30 @@ class CardInfoField extends DBEnabledClass
 	
 	void addToDatabase() throws SQLException
 	{
-		dm.connection.createStatement().executeUpdate(
+		PreparedStatement statement = dm.connection.prepareStatement(
 			"INSERT INTO cardInfoField ("
 				+ "keyName, questionFormat"
 			+ ") VALUES ("
-				+ "'" + keyName + "', '" + questionFormat + "'"
+				+ "?, ?"
 			+ ")"
 		);
+		statement.setString(1, keyName);
+		statement.setString(2, questionFormat);
+		statement.executeUpdate();
 	}
 	
 	void addToObjects() {}
 	
 	void updateInDatabase() throws SQLException
 	{
-		dm.connection.createStatement().executeUpdate(
+		PreparedStatement statement = dm.connection.prepareStatement(
 			"UPDATE cardInfoField SET "
-				+ "questionFormat = '" + questionFormat + "'"
-			+ " WHERE keyName = '" + keyName + "'"
+				+ "questionFormat = ?"
+			+ " WHERE keyName = ?"
 		);
+		statement.setString(1, questionFormat);
+		statement.setString(2, keyName);
+		statement.executeUpdate();
 	}
 	
 	void handleRemove() throws SQLException
@@ -90,10 +97,12 @@ class CardInfoField extends DBEnabledClass
 	{
 		if (entries.size() > 0)
 			throw new RuntimeException("Not going to remove this info field definition: it's still being used by " + entries.size() + " cards!");
-		dm.connection.createStatement().executeUpdate(
+		PreparedStatement statement = dm.connection.prepareStatement(
 			"DELETE FROM cardInfoField"
-			+ " WHERE keyName = '" + keyName + "'"
+			+ " WHERE keyName = ?"
 		);
+		statement.setString(1, keyName);
+		statement.executeUpdate();
 	}
 	
 	void removeFromObjects() {}

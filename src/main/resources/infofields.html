@@ -248,6 +248,15 @@
 	  </div>
 	  </div>
 	  <script>
+		  function escapeHtml(unsafe) {
+			// see https://stackoverflow.com/a/6234804
+			return unsafe
+				 .replace(/&/g, "&amp;")
+				 .replace(/</g, "&lt;")
+				 .replace(/>/g, "&gt;")
+				 .replace(/"/g, "&quot;")
+				 .replace(/'/g, "&#039;");
+		  }
 	      var addAside = document.getElementById('add-aside');
 		  var editAside = document.getElementById('edit-aside');
 		  var asideClose = document.getElementById('add-aside-close');
@@ -271,7 +280,7 @@
 			card.setAttribute("class", "p-card--highlighted infofield-edit-trigger");
 			var header1 = document.createElement("h3");
 			header1.setAttribute("class", "card__title");
-			header1.innerHTML = infoField.questionFormat;
+			header1.innerHTML = escapeHtml(infoField.questionFormat);
 			var header2 = document.createElement("h5");
 			header2.innerHTML = "Used in: " + infoField.numEntries + (infoField.numEntries==1?" entry":" entries");
 			var content = document.createElement("p");

@@ -1,4 +1,5 @@
 import java.sql.SQLException;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.HashMap;
 import java.util.Map;
@@ -55,13 +56,15 @@ class CardPack extends DBEnabledClass
 	
 	void addToDatabase() throws SQLException
 	{
-		dm.connection.createStatement().executeUpdate(
+		PreparedStatement statement = dm.connection.prepareStatement(
 			"INSERT INTO cardPack ("
 				+ "packName"
 			+ ") VALUES ("
-				+ "'" + packName + "'"
+				+ "?"
 			+ ")"
 		);
+		statement.setString(1, packName);
+		statement.executeUpdate();
 	}
 	
 	void addToObjects() {}
@@ -81,10 +84,12 @@ class CardPack extends DBEnabledClass
 	{
 		if (cards.size() > 0)
 			throw new RuntimeException("Not going to remove this card pack: it's still being used by " + cards.size() + " cards!");
-		dm.connection.createStatement().executeUpdate(
+		PreparedStatement statement = dm.connection.prepareStatement(
 			"DELETE FROM cardPack"
-			+ " WHERE packName = '" + packName + "'"
+			+ " WHERE packName = ?"
 		);
+		statement.setString(1, packName);
+		statement.executeUpdate();
 	}
 	
 	void removeFromObjects() {}

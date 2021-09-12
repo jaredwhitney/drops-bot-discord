@@ -225,6 +225,15 @@
 	  </div>
 	  </div>
 	  <script>
+		  function escapeHtml(unsafe) {
+			// see https://stackoverflow.com/a/6234804
+			return unsafe
+				 .replace(/&/g, "&amp;")
+				 .replace(/</g, "&lt;")
+				 .replace(/>/g, "&gt;")
+				 .replace(/"/g, "&quot;")
+				 .replace(/'/g, "&#039;");
+		  }
 	      var addAside = document.getElementById('add-aside');
 		  var asideClose = document.getElementById('add-aside-close');
 		  var addTriggers = document.querySelectorAll('.cardpack-add-trigger');
@@ -242,7 +251,7 @@
 			card.setAttribute("class", "p-card--highlighted");
 			var header1 = document.createElement("h3");
 			header1.setAttribute("class", "card__title");
-			header1.innerHTML = cardPack;
+			header1.innerHTML = escapeHtml(cardPack);
 			var header2 = document.createElement("h5");
 			header2.innerHTML = "Pack contents: " + data[cardPack] + (data[cardPack]==1?" card":" cards");
 			var content = document.createElement("p");

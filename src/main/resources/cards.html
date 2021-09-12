@@ -263,6 +263,15 @@
   </aside>
   </div>
   <script>
+	  function escapeHtml(unsafe) {
+		// see https://stackoverflow.com/a/6234804
+		return unsafe
+			 .replace(/&/g, "&amp;")
+			 .replace(/</g, "&lt;")
+			 .replace(/>/g, "&gt;")
+			 .replace(/"/g, "&quot;")
+			 .replace(/'/g, "&#039;");
+	  }
 	  function setupAppLayoutExamples() {
 		  var aside = document.getElementById('edit-aside');
 		  var navigation = document.querySelector('.l-navigation');
@@ -293,42 +302,6 @@
 		  
 		  <<>>DATALOC<<>>
 		  
-		  /*var data = {
-			"jiro.webp": {
-				"displayName":"Jiro",
-				"displayDescription":"Hearing Hero: Earphone Jack",
-				"image":"https://drops.0k.rip/card/jiro.webp",
-				"cardPack":"My Hero Academia",
-				"extraInfo": [
-					{ "id": 0, "key": "dg_hero_power", "value": "Earphone Jack" },
-				],
-			},
-			"hawks.webp": {
-				"displayName":"Hawks",
-				"displayDescription":"Wing Hero",
-				"image":"https://drops.0k.rip/card/hawks.webp",
-				"cardPack":"My Hero Academia",
-				"extraInfo": {},
-			},
-			"kaminari.webp": {
-				"displayName":"Kaminari",
-				"displayDescription":"Stun Gun Hero: Chargebolt",
-				"image":"https://drops.0k.rip/card/kaminari.webp",
-				"cardPack":"My Hero Academia",
-				"extraInfo": {},
-			},
-		  };
-		  var keys = [
-			{ "raw": "dg_hero_power", "display": "Hero Power" },
-			{ "raw": "dg_age", "display": "Age" },
-		  ];
-		  var packs = [
-			"League of Legends",
-			"My Hero Academia",
-			"Valorant",
-			"Stardew Valley",
-		  ];*/
-		  
 		  for (cardid in data) {
 			var card = data[cardid];
 			var colDiv = document.createElement("div");
@@ -339,7 +312,7 @@
 			var dataIdSpan = document.createElement("span");
 			dataIdSpan.setAttribute("class","data-id");
 			dataIdSpan.setAttribute("style","display:none;");
-			dataIdSpan.innerHTML = cardid;
+			dataIdSpan.innerHTML = escapeHtml(cardid);
 			var contentDiv = document.createElement("div");
 			contentDiv.setAttribute("class","p-card__content");
 			var center = document.createElement("center");
@@ -348,7 +321,7 @@
 			cardImage.setAttribute("alt",card.displayName);
 			cardImage.setAttribute("src",card.image);
 			var nameHeader = document.createElement("h4");
-			nameHeader.innerHTML = card.displayName;
+			nameHeader.innerHTML = escapeHtml(card.displayName);
 			center.appendChild(cardImage);
 			center.appendChild(nameHeader);
 			contentDiv.appendChild(center);
@@ -396,7 +369,7 @@
 			for (pack of packs) {
 				var packOptn = document.createElement("option");
 				packOptn.setAttribute("value", pack);
-				packOptn.innerHTML = pack;
+				packOptn.innerHTML = escapeHtml(pack);
 				elem.appendChild(packOptn);
 			}
 		  }
@@ -437,7 +410,7 @@
 				var keyOptn = document.createElement('option');
 				keyOptn.setAttribute("value", key["raw"]);
 				if (key["raw"] == skey) keyOptn.setAttribute("selected", "");
-				keyOptn.innerHTML = key["display"];
+				keyOptn.innerHTML = escapeHtml(key["display"]);
 				keyEntry.appendChild(keyOptn);
 			}
 			var keyValue = document.createElement('input');

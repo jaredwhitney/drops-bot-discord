@@ -1,4 +1,5 @@
 import java.sql.SQLException;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
 class Settings extends DBEnabledClass
@@ -74,14 +75,27 @@ class Settings extends DBEnabledClass
 		);
 		if (!settingsRS.next())
 		{
-			dm.connection.createStatement().executeUpdate(
+			PreparedStatement statement = dm.connection.prepareStatement(
 				"INSERT INTO settings ("
 					+ "dropNumCards, dropCooldownMillis, dungeonOptions, dungeonCooldownMillis, serverPort, botPrefix, siteUrl, cardsFolder, authHandler, botToken, botClientId"
 				+ ") VALUES ("
-					+ "3, 600000, 4, 600000, 28002, ',', 'drops.0k.rip', '/www/drops.0k.rip/card/', 'auth.aws1.0k.rip', 'INVALID_TOKEN_REPLACE_ME', 'INVALID_CLIENT_ID_REPLACE_ME'"
+					+ "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?"
 				+ ")"
 			);
+			statement.setInt(1, 3);
+			statement.setInt(2, 60000);
+			statement.setInt(3, 4);
+			statement.setInt(4, 600000);
+			statement.setInt(5, 28002);
+			statement.setString(6, ",");
+			statement.setString(7, "drops.0k.rip");
+			statement.setString(8, "/www/drops.0k.rip/card/");
+			statement.setString(9, "auth.aws1.0k.rip");
+			statement.setString(10, "INVALID_TOKEN_REPLACE_ME");
+			statement.setString(11, "INVALID_CLIENT_ID_REPLACE_ME");
+			statement.executeUpdate();
 			readFromDatabase(dm);
+			return;
 		}
 		Settings settings = new Settings(dm);
 		settings.dropNumCards = settingsRS.getInt("dropNumCards");
@@ -105,20 +119,32 @@ class Settings extends DBEnabledClass
 	void addToObjects() {}
 	void updateInDatabase() throws SQLException
 	{
-		dm.connection.createStatement().executeUpdate(
+		PreparedStatement statement = dm.connection.prepareStatement(
 			"UPDATE settings SET "
-				+ "dropNumCards = " + dropNumCards + ","
-				+ "dropCooldownMillis = " + dropCooldownMillis + ","
-				+ "dungeonOptions = " + dungeonOptions + ","
-				+ "dungeonCooldownMillis = " + dungeonCooldownMillis + ","
-				+ "serverPort = " + serverPort + ","
-				+ "botPrefix = '" + botPrefix + "',"
-				+ "siteUrl = '" + siteUrl + "',"
-				+ "cardsFolder = '" + cardsFolder + "',"
-				+ "authHandler = '" + authHandler + "',"
-				+ "botToken = '" + botToken + "',"
-				+ "botClientId = '" + botClientId + "'"
+				+ "dropNumCards = ?,"
+				+ "dropCooldownMillis = ?,"
+				+ "dungeonOptions = ?,"
+				+ "dungeonCooldownMillis = ?,"
+				+ "serverPort = ?,"
+				+ "botPrefix = ?,"
+				+ "siteUrl = ?,"
+				+ "cardsFolder = ?,"
+				+ "authHandler = ?,"
+				+ "botToken = ?,"
+				+ "botClientId = ?"
 		);
+		statement.setInt(1, dropNumCards);
+		statement.setInt(2, dropCooldownMillis);
+		statement.setInt(3, dungeonOptions);
+		statement.setInt(4, dungeonCooldownMillis);
+		statement.setInt(5, serverPort);
+		statement.setString(6, botPrefix);
+		statement.setString(7, siteUrl);
+		statement.setString(8, cardsFolder);
+		statement.setString(9, authHandler);
+		statement.setString(10, botToken);
+		statement.setString(11, botClientId);
+		statement.executeUpdate();
 	}
 	void removeFromDatabase() throws SQLException
 	{

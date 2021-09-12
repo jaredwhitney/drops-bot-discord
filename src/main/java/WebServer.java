@@ -250,7 +250,6 @@ class WebServer
 						card.displayDescription = displayDescription;
 						card.cardPack = dm.cardPacks.get(cardPack);
 						
-						System.out.println("Uploaded card was " + fileDesc.filedata);
 						Path destPath = Paths.get(dm.settings.cardsFolder, rawName);
 						if (!destPath.startsWith(Paths.get(dm.settings.cardsFolder).toAbsolutePath()))
 						{
@@ -258,6 +257,7 @@ class WebServer
 							return;
 						}
 						Files.write(destPath, fileDesc.filedata);
+						System.out.println("Uploaded card image to " + destPath);
 						card.handleAdd();
 						
 						String redirectURL = (req.getParam("pack")==null ? "/admin/cards?name="+rawName : "/admin/cardpack?name=" + cardPack);
@@ -482,13 +482,13 @@ class WebServer
 								.replaceAll("\\Q<<>>dropCooldownMillis<<>>\\E", dm.settings.dropCooldownMillis+"")
 								.replaceAll("\\Q<<>>dungeonOptions<<>>\\E", dm.settings.dungeonOptions+"")
 								.replaceAll("\\Q<<>>dungeonCooldownMillis<<>>\\E", dm.settings.dungeonCooldownMillis+"")
-								.replaceAll("\\Q<<>>botPrefix<<>>\\E", dm.settings.botPrefix)
-								.replaceAll("\\Q<<>>botClientId<<>>\\E", dm.settings.botClientId)
-								.replaceAll("\\Q<<>>botToken<<>>\\E", dm.settings.botToken)
+								.replaceAll("\\Q<<>>botPrefix<<>>\\E", escapeString(dm.settings.botPrefix))
+								.replaceAll("\\Q<<>>botClientId<<>>\\E", escapeString(dm.settings.botClientId))
+								.replaceAll("\\Q<<>>botToken<<>>\\E", escapeString(dm.settings.botToken))
 								.replaceAll("\\Q<<>>serverPort<<>>\\E", dm.settings.serverPort+"")
-								.replaceAll("\\Q<<>>siteUrl<<>>\\E", dm.settings.siteUrl)
-								.replaceAll("\\Q<<>>authHandler<<>>\\E", dm.settings.authHandler)
-								.replaceAll("\\Q<<>>cardsFolder<<>>\\E", dm.settings.cardsFolder)
+								.replaceAll("\\Q<<>>siteUrl<<>>\\E", escapeString(dm.settings.siteUrl))
+								.replaceAll("\\Q<<>>authHandler<<>>\\E", escapeString(dm.settings.authHandler))
+								.replaceAll("\\Q<<>>cardsFolder<<>>\\E", escapeString(dm.settings.cardsFolder))
 								.replaceAll("\\Q<<>>BOT_ADD_URL<<>>\\E", "https://discordapp.com/api/oauth2/authorize?client_id=" + dm.settings.botClientId + "&permissions=243336208192&scope=bot");
 					req.respond(resp);
 				}
@@ -561,7 +561,7 @@ class WebServer
 	
 	public static String escapeString(String s)
 	{
-	  return s.replaceAll("\\Q\\\\E", "\\\\\\\\")
+	  return s.replaceAll("\\\\", "\\\\\\\\\\\\\\\\")
 			  .replaceAll("\\Q\t\\E", "\\\\\\\\\t")
 			  .replaceAll("\\Q\b\\E", "\\\\\\\\\b")
 			  .replaceAll("\\Q\n\\E", "\\\\\\\\\n")

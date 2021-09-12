@@ -1,4 +1,5 @@
 import java.sql.SQLException;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Map;
@@ -80,13 +81,18 @@ class CardDef extends DBEnabledClass
 	
 	void addToDatabase() throws SQLException
 	{
-		dm.connection.createStatement().executeUpdate(
+		PreparedStatement statement = dm.connection.prepareStatement(
 			"INSERT INTO cardDefinition ("
 				+ "imageFilename, displayName, displayDescription, packName"
 			+ ") VALUES ("
-				+ "'" + imageFilename + "', '" + displayName + "', '" + displayDescription + "', '" + cardPack.packName + "'"
+				+ "?, ?, ?, ?"
 			+ ")"
 		);
+		statement.setString(1, imageFilename);
+		statement.setString(2, displayName);
+		statement.setString(3, displayDescription);
+		statement.setString(4, cardPack.packName);
+		statement.executeUpdate();
 	}
 	
 	void addToObjects()
@@ -96,13 +102,18 @@ class CardDef extends DBEnabledClass
 	
 	void updateInDatabase() throws SQLException
 	{
-		dm.connection.createStatement().executeUpdate(
+		PreparedStatement statement = dm.connection.prepareStatement(
 			"UPDATE cardDefinition SET "
-				+ "displayName = '" + displayName + "',"
-				+ "displayDescription = '" + displayDescription + "',"
-				+ "packName = '" + cardPack.packName + "'"
-			+ " WHERE imageFilename = '" + imageFilename + "'"
+				+ "displayName = ?,"
+				+ "displayDescription = ?,"
+				+ "packName = ?"
+			+ " WHERE imageFilename = ?"
 		);
+		statement.setString(1, displayName);
+		statement.setString(2, displayDescription);
+		statement.setString(3, cardPack.packName);
+		statement.setString(4, imageFilename);
+		statement.executeUpdate();
 	}
 	
 	void handleRemove() throws SQLException

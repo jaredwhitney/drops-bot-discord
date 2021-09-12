@@ -1,4 +1,5 @@
 import java.sql.SQLException;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 
@@ -74,13 +75,18 @@ class CardInfoFieldEntry extends DBEnabledClass
 	
 	void addToDatabase() throws SQLException
 	{
-		dm.connection.createStatement().executeUpdate(
+		PreparedStatement statement = dm.connection.prepareStatement(
 			"INSERT INTO cardInfoEntry ("
 				+ "id, card, field, value"
 			+ ") VALUES ("
-				+ "'" + id + "', '" + card.imageFilename + "', '" + field.keyName + "', '" + value + "'"
+				+ "?, ?, ?, ?"
 			+ ")"
 		);
+		statement.setString(1, id);
+		statement.setString(2, card.imageFilename);
+		statement.setString(3, field.keyName);
+		statement.setString(4, value);
+		statement.executeUpdate();
 	}
 	
 	void addToObjects()
@@ -93,13 +99,18 @@ class CardInfoFieldEntry extends DBEnabledClass
 	
 	void updateInDatabase() throws SQLException
 	{
-		dm.connection.createStatement().executeUpdate(
+		PreparedStatement statement = dm.connection.prepareStatement(
 			"UPDATE cardInfoEntry SET "
-				+ "card = '" + card.imageFilename + "',"
-				+ "field = '" + field.keyName + "',"
-				+ "value = '" + value + "'"
-			+ " WHERE id = '" + id + "'"
+				+ "card = ?,"
+				+ "field = ?,"
+				+ "value = ?"
+			+ " WHERE id = ?"
 		);
+		statement.setString(1, card.imageFilename);
+		statement.setString(2, field.keyName);
+		statement.setString(3, value);
+		statement.setString(4, id);
+		statement.executeUpdate();
 	}
 	
 	// Needs custom logic because the objects are stored directly in an array in CardDef.info, not a hashmap with an index as key
@@ -126,10 +137,12 @@ class CardInfoFieldEntry extends DBEnabledClass
 	
 	void removeFromDatabase() throws SQLException
 	{
-		dm.connection.createStatement().executeUpdate(
+		PreparedStatement statement = dm.connection.prepareStatement(
 			"DELETE FROM cardInfoEntry"
-			+ " WHERE id = '" + id + "'"
+			+ " WHERE id = ?"
 		);
+		statement.setString(1, id);
+		statement.executeUpdate();
 	}
 	
 	void removeFromObjects()
