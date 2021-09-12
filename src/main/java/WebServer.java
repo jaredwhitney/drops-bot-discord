@@ -20,6 +20,7 @@ class WebServer
 	
 	private DatabaseManager dm;
 	
+	HttpServer server;
 	Map<String,RenderedImageStorage> renderedImageCache = new HashMap<String,RenderedImageStorage>();
 	private String cardHTML, settingsHTML, cardPackHTML, infoFieldHTML, accountHTML;
 	private byte[] botProfile;
@@ -33,7 +34,6 @@ class WebServer
 	{
 		try
 		{
-			HttpServer server = null;
 			for (int i = 0; server == null && (i < (WEB_SERVER_STARTUP_TIMES_TO_RETRY+1)); i++)
 			{
 				try
@@ -557,6 +557,27 @@ class WebServer
 						req.respond("Internal error: " + ex.getMessage());
 						ex.printStackTrace();
 					}
+				}
+				else if (req.matches(HttpVerb.POST, "/admin/restart"))
+				{
+					String redirectURL = (localUserBypass ? ("http://127.0.0.1:" + dm.settings.serverPort) : dm.settings.siteUrl);
+					req.respondWithHeaders1(
+						HttpStatus.TEMPORARY_REDIRECT_302,
+						"Redirecting you to <a href=\"" + redirectURL + "\">" + redirectURL + "</a>",
+						"Location: " + redirectURL
+					);
+					server.shutdown();
+					DropsBot.discordBot.shutdown();
+					dm.disconnect();
+					try
+					{
+						DropsBot.main(DropsBot.argStore);
+					}
+					catch (Exception ex)
+					{
+						ex.printStackTrace();
+					}
+					return;
 				}
 				else
 				{

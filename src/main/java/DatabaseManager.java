@@ -24,6 +24,17 @@ class DatabaseManager
 		properties.setProperty("PRAGMA foreign_keys", "ON");
 		connection = DriverManager.getConnection("jdbc:sqlite:" + new File(databaseLocation).getAbsolutePath(), properties);
 	}
+	public void disconnect()
+	{
+		try
+		{
+			connection.close();
+		}
+		catch (Exception ex)
+		{
+			ex.printStackTrace();
+		}
+	}
 	public void initAllTables() throws SQLException
 	{
 		User.tableInit(this);

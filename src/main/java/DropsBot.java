@@ -15,12 +15,18 @@ public final class DropsBot
 	public static DatabaseManager databaseManager;
 	public static WebServer webServer;
 	public static DiscordBot discordBot;
+	static String[] argStore;
 	
 	/**
 	 * Main program entry point, starts both the web server and the discord bot
 	 */
 	public static void main(final String[] args) throws SQLException
 	{
+		
+		System.out.println("*** drops? bot main method called ***");
+		
+		// Used for software-initiated restart
+		argStore = args;
 		
 		// Determine the location of the database file
 		String databaseLocation = null;

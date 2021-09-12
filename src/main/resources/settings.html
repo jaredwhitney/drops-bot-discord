@@ -236,7 +236,7 @@
 	</div>
 <button class="p-button--positive">Save changes</button>
 </fieldset>
-<fieldset action="/admin/settings" method="post">
+<fieldset>
 <h3>App Config</h3>
 <div class="p-notification--caution">
   <div class="p-notification__content">
@@ -255,6 +255,18 @@
 <input class="p-form__input" type="text" id="cardsFolder" name="cardsFolder" value="<<>>cardsFolder<<>>"><br>
 </div>
 <button class="p-button--positive">Save changes</button>
+</fieldset>
+</form>
+<form class="p-form p-form--stacked" enctype="multipart/form-data" action="/admin/restart" method="post">
+<fieldset>
+<h3>App Control</h3>
+<div class="p-notification--caution">
+  <div class="p-notification__content">
+    <h5 class="p-notification__title">Restarting the Application</h5>
+    <p class="p-notification__message">Restarting the app will NOT save any changes you have made on this page. Please save before restarting.</p>
+  </div>
+</div>
+<button class="p-button--neutral">Restart app</button>
 </fieldset>
 </form>
 
