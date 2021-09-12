@@ -566,18 +566,7 @@ class WebServer
 						"Redirecting you to <a href=\"" + redirectURL + "\">" + redirectURL + "</a>",
 						"Location: " + redirectURL
 					);
-					server.shutdown();
-					DropsBot.discordBot.shutdown();
-					dm.disconnect();
-					try
-					{
-						DropsBot.main(DropsBot.argStore);
-					}
-					catch (Exception ex)
-					{
-						ex.printStackTrace();
-					}
-					return;
+					DropsBot.restart();
 				}
 				else
 				{
@@ -593,6 +582,11 @@ class WebServer
 			System.out.println("Note: The Discord bot will not be started; if it has already started it will be stopped.");
 			System.exit(0);
 		}
+	}
+	
+	public void shutdown()
+	{
+		server.shutdown();
 	}
 	
 	public static String escapeString(String s)

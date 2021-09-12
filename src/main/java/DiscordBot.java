@@ -40,6 +40,8 @@ class DiscordBot
 		{
 			if (dm.settings.botToken.length() == 0)
 			{
+				DropsBot.setSystemTrayNoBot();
+				DropsBot.notifyNoBotToken();
 				throw new RuntimeException("No bot token has been set; please do so in the web UI at " + dm.settings.siteUrl + "/admin/settings");
 			}
 			final DiscordClient client = DiscordClient.create(dm.settings.botToken);
@@ -386,6 +388,7 @@ class DiscordBot
 			System.out.println("Uh-oh! Unhandled exception in the Discord bot code.\n\tbotToken: " + dm.settings.botToken);
 			ex.printStackTrace();
 			System.out.println("Note: The web-server will continue running.");
+			DropsBot.setSystemTrayNoBot();
 		}
 	}
 	
@@ -396,9 +399,7 @@ class DiscordBot
 			gateway.logout();
 		}
 		catch (Exception ex)
-		{
-			ex.printStackTrace();
-		}
+		{}
 	}
 	
 	public CardInst genCard(CardDef cardDef)
