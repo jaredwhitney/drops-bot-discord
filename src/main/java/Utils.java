@@ -14,6 +14,8 @@ class Utils
 	
 	public static BufferedImage stitchImages(DatabaseManager dm, String[] packCards) throws IOException
 	{
+		if (dm.settings.cardsFolder.length() == 0)
+			return null;
 		ArrayList<BufferedImage> packImages = new ArrayList<BufferedImage>();
 		int mh = 0, tw = 0;
 		for (String card : packCards)

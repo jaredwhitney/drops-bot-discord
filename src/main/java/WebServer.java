@@ -82,6 +82,11 @@ class WebServer
 						req.respond(HttpStatus.NOT_FOUND_404);
 						return;
 					}
+					if (dm.settings.cardsFolder.length() == 0)
+					{
+						req.respond(HttpStatus.NOT_FOUND_404);
+						return;
+					}
 					Path filePath = Paths.get(dm.settings.cardsFolder, req.path.substring("/card/".length())).toAbsolutePath();
 					if (!filePath.startsWith(Paths.get(dm.settings.cardsFolder).toAbsolutePath()) || !filePath.toFile().exists())
 					{
@@ -139,6 +144,11 @@ class WebServer
 				{
 					auth.username = "Local User Bypass";
 					localUserBypass = true;
+				}
+				else if (auth.authPath.length() == 0)
+				{
+					req.respond(HttpStatus.NOT_FOUND_404);
+					return;
 				}
 				else if (!auth.enforceValidCredentials("drops-admin"))
 					return;
@@ -203,7 +213,7 @@ class WebServer
 						datajson += "\t\t\"displayName\": \"" + escapeString(card.displayName) + "\",\n";
 						if (card.displayDescription != null)
 							datajson += "\t\t\"displayDescription\": \"" + escapeString(card.displayDescription) + "\",\n";
-						datajson += "\t\t\"image\": \"https://" + escapeString(dm.settings.siteUrl) + "/card/" + escapeString(card.imageFilename) + "\",\n";
+						datajson += "\t\t\"image\": \"" + escapeString(dm.settings.siteUrl) + "/card/" + escapeString(card.imageFilename) + "\",\n";
 						datajson += "\t\t\"cardPack\": \"" + escapeString(card.cardPack.packName) + "\",\n";
 						datajson += "\t\t\"extraInfo\": [\n";
 						for (ArrayList<CardInfoFieldEntry> entryList : card.info.values())
@@ -236,6 +246,11 @@ class WebServer
 				{
 					try
 					{
+						if (dm.settings.cardsFolder.length() == 0)
+						{
+							req.respond("I can't add that card! You need to set a card folder at <a href=\"/admin/settings\">/admin/settings</a> first!");
+							return;
+						}
 						String displayDescription = req.getMultipart("displayDescription").asString();
 						String cardPack = req.getMultipart("cardPack").asString();
 						HttpRequest.Multipart fileDesc = req.getMultipart("cardImage");

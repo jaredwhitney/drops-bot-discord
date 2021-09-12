@@ -88,11 +88,11 @@ class Settings extends DBEnabledClass
 			statement.setInt(4, 600000);
 			statement.setInt(5, 28002);
 			statement.setString(6, ",");
-			statement.setString(7, "drops.0k.rip");
-			statement.setString(8, "/www/drops.0k.rip/card/");
-			statement.setString(9, "auth.aws1.0k.rip");
-			statement.setString(10, "INVALID_TOKEN_REPLACE_ME");
-			statement.setString(11, "INVALID_CLIENT_ID_REPLACE_ME");
+			statement.setString(7, "http://127.0.0.1:28002");
+			statement.setString(8, "");
+			statement.setString(9, "");
+			statement.setString(10, "");
+			statement.setString(11, "");
 			statement.executeUpdate();
 			readFromDatabase(dm);
 			return;
@@ -119,6 +119,10 @@ class Settings extends DBEnabledClass
 	void addToObjects() {}
 	void updateInDatabase() throws SQLException
 	{
+		if (siteUrl.indexOf("://") == -1)
+			siteUrl = "https://" + siteUrl;
+		if (siteUrl.charAt(siteUrl.length()-1) == '/')
+			siteUrl = siteUrl.substring(0, siteUrl.length()-1);
 		PreparedStatement statement = dm.connection.prepareStatement(
 			"UPDATE settings SET "
 				+ "dropNumCards = ?,"

@@ -37,6 +37,10 @@ class DiscordBot
 	{
 		try
 		{
+			if (dm.settings.botToken.length() == 0)
+			{
+				throw new RuntimeException("No bot token has been set; please do so in the web UI at " + dm.settings.siteUrl + "/admin/settings");
+			}
 			final DiscordClient client = DiscordClient.create(dm.settings.botToken);
 			final GatewayDiscordClient gateway = client.login().block();
 			
@@ -87,7 +91,7 @@ class DiscordBot
 						CardDef[] cards = dm.cardDefinitions.values().toArray(CardDef[]::new);
 						if (cards.length == 0)
 						{
-							discordChannelObj.createMessage("Sorry " + nickname + ", I don't have any cards to drop yet!\nAsk an admin to add some using the admin panel at https://" + dm.settings.siteUrl + "/admin/cards").subscribe();
+							discordChannelObj.createMessage("Sorry " + nickname + ", I don't have any cards to drop yet!\nAsk an admin to add some using the admin panel at " + dm.settings.siteUrl + "/admin/cards").subscribe();
 							return;
 						}
 						
@@ -128,8 +132,8 @@ class DiscordBot
 							{
 								temp = temp.addField("Card " + (i+1), cardSend.get(i).displayName, true);
 							}
-							temp.setImage("https://" + dm.settings.siteUrl + "/cardpack?" + cardStrSendFinal)
-							.setFooter("drops?", "https://" + dm.settings.siteUrl + "/img/botprofile.png")
+							temp.setImage(dm.settings.siteUrl + "/cardpack?" + cardStrSendFinal)
+							.setFooter("drops?", dm.settings.siteUrl + "/img/botprofile.png")
 							.setTimestamp(Instant.now());
 						}).flatMap(msg -> {
 							dropInfo.messageId = ((Message)msg).getId().asString();
@@ -159,8 +163,8 @@ class DiscordBot
 								.addField("ID", card.id, true)
 								.addField("Stars", card.stars+"", true)
 								.addField("Level", card.level+"", true)
-								.setImage("https://" + dm.settings.siteUrl + "/card/" + card.def.imageFilename)
-								.setFooter("drops?", "https://" + dm.settings.siteUrl + "/img/botprofile.png")
+								.setImage(dm.settings.siteUrl + "/card/" + card.def.imageFilename)
+								.setFooter("drops?", dm.settings.siteUrl + "/img/botprofile.png")
 								.setTimestamp(Instant.now())
 							).subscribe();
 						}
@@ -246,8 +250,8 @@ class DiscordBot
 								{
 									temp = temp.addField(new String(new byte[]{(byte)(0x31+i),(byte)-17,(byte)-72,(byte)-113,(byte)-30,(byte)-125,(byte)-93}), dungeonValues[i], true);
 								}
-								temp.setImage("https://" + dm.settings.siteUrl + "/card/" + dungeonCard.imageFilename)
-								.setFooter("drops?", "https://" + dm.settings.siteUrl + "/img/botprofile.png")
+								temp.setImage(dm.settings.siteUrl + "/card/" + dungeonCard.imageFilename)
+								.setFooter("drops?", dm.settings.siteUrl + "/img/botprofile.png")
 								.setTimestamp(Instant.now());
 							}).flatMap(msg -> {
 								dungeonInfo.messageId = ((Message)msg).getId().asString();
@@ -260,7 +264,7 @@ class DiscordBot
 						}
 						else
 						{
-							discordChannelObj.createMessage("Sorry " + nickname + ", I don't have enough card info to create dungeons with the specified option count of " + dm.settings.dungeonOptions + ".\nAsk an admin to add more card info using the admin panel at https://" + dm.settings.siteUrl + "/admin/cards or lower the dungeon option count.").subscribe();
+							discordChannelObj.createMessage("Sorry " + nickname + ", I don't have enough card info to create dungeons with the specified option count of " + dm.settings.dungeonOptions + ".\nAsk an admin to add more card info using the admin panel at " + dm.settings.siteUrl + "/admin/cards or lower the dungeon option count.").subscribe();
 						}
 						
 					}
@@ -274,7 +278,7 @@ class DiscordBot
 								.setThumbnail(discordUserObj.getAvatarUrl())
 								.addField("Drop", (dropCd <= 0 ? "[READY]" : formatDuration(dropCd)), false)
 								.addField("Dungeon", (dungeonCd <= 0 ? "[READY]" : formatDuration(dungeonCd)), true)
-								.setFooter("drops?", "https://" + dm.settings.siteUrl + "/img/botprofile.png")
+								.setFooter("drops?", dm.settings.siteUrl + "/img/botprofile.png")
 								.setTimestamp(Instant.now())
 						).subscribe();
 					}
