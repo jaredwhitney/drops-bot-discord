@@ -49,13 +49,13 @@ class Utils
 	public static BufferedImage getCardImage(DatabaseManager dm, CardDef def) throws IOException
 	{
 		BufferedImage img = ImageIO.read(Paths.get(dm.settings.cardsFolder, def.imageFilename).toFile());
-		return getCardImage(img, -1, -1, Math.max(img.getHeight(), 800));
+		return getCardImage(img, -1, -1, Math.max(img.getHeight(), 560));
 	}
 	
 	public static BufferedImage getCardImage(DatabaseManager dm, CardInst inst) throws IOException
 	{
 		BufferedImage img = ImageIO.read(Paths.get(dm.settings.cardsFolder, inst.def.imageFilename).toFile());
-		return getCardImage(img, inst.level, inst.stars, Math.max(img.getHeight(), 800));
+		return getCardImage(img, inst.level, inst.stars, Math.max(img.getHeight(), 560));
 	}
 	
 	public static BufferedImage getCardImage(BufferedImage image, int level, int stars, int desiredHeight)
@@ -79,6 +79,15 @@ class Utils
 			g2 = (Graphics2D)image.getGraphics();
 			g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
 			g2.drawImage(tmp, -(tmp.getWidth()-image.getWidth())/2, 0, null);
+		}
+		else if (image.getWidth() < image.getHeight()*0.6)
+		{
+			BufferedImage tmp = image;
+			image = new BufferedImage((int)(tmp.getHeight()*0.6), tmp.getHeight(), BufferedImage.TYPE_INT_ARGB);
+			g2.dispose();
+			g2 = (Graphics2D)image.getGraphics();
+			g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+			g2.drawImage(tmp, (image.getWidth()-tmp.getWidth())/2, (image.getHeight()-tmp.getHeight())/2, null);
 		}
 		BufferedImage tmp = image;
 		image = new BufferedImage((int)(image.getWidth()/(image.getHeight()/(double)desiredHeight)), desiredHeight, BufferedImage.TYPE_INT_ARGB);
@@ -153,36 +162,15 @@ class Utils
 			BufferedImage image = packImages.get(j);
 			image = getCardImage(image, -1, -1, mh);
 			packImages.set(j, image);
-			// if (image.getWidth() > image.getHeight()*0.6)
-			// {
-				// if (image.getHeight() < mh/2)
-				// {
-					// BufferedImage tmp = image;
-					// image = new BufferedImage((int)(tmp.getWidth()*((mh/2.0)/tmp.getHeight())), mh/2, BufferedImage.TYPE_INT_ARGB);
-					// image.getGraphics().drawImage(tmp, (image.getWidth()-tmp.getWidth())/2, (image.getHeight()-tmp.getHeight())/2, null);
-				// }
-				// BufferedImage tmp = image;
-				// image = new BufferedImage((int)(tmp.getHeight()*0.6), tmp.getHeight(), BufferedImage.TYPE_INT_ARGB);
-				// image.getGraphics().drawImage(tmp, -(tmp.getWidth()-image.getWidth())/2, 0, null);
-				// packImages.set(j, image);
-			// }
-			tw += (int)(image.getWidth()*(mh/(double)image.getHeight()));
+			tw += image.getWidth();
 		}
 		System.out.println("Gen combined");
-		double scaleFactor = 1.0;
-		if (tw > 1600)
-		{
-			scaleFactor = 1600.0/tw;
-			tw = 1600;
-			mh = (int)(mh*scaleFactor);
-		}
 		BufferedImage combined = new BufferedImage(tw,mh,3);
 		int x = 0;
 		for (BufferedImage image : packImages)
 		{
-			int imw = (int)(image.getWidth()*(mh/(double)image.getHeight()));
-			combined.getGraphics().drawImage(image, (int)(x*scaleFactor), 0, (int)(scaleFactor*imw), (int)(scaleFactor*mh), null);
-			x += imw;
+			combined.getGraphics().drawImage(image, x, 0, null);
+			x += image.getWidth();
 		}
 		System.out.println(" . . .");
 		return combined;
