@@ -104,7 +104,7 @@ class User extends DBEnabledClass
 	void handleRemove() throws SQLException
 	{
 		super.handleRemove();
-		dm.users.remove(this);
+		dm.users.remove(userId);
 	}
 	
 	void removeFromDatabase() throws SQLException

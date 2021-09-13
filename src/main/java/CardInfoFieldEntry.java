@@ -132,7 +132,7 @@ class CardInfoFieldEntry extends DBEnabledClass
 	void handleRemove() throws SQLException
 	{
 		super.handleRemove();
-		dm.cardInfoFieldEntries.remove(this);
+		dm.cardInfoFieldEntries.remove(id);
 	}
 	
 	void removeFromDatabase() throws SQLException

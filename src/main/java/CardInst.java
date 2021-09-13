@@ -121,7 +121,7 @@ class CardInst extends DBEnabledClass
 	void handleRemove() throws SQLException
 	{
 		super.handleRemove();
-		dm.cardInstances.remove(this);
+		dm.cardInstances.remove(id);
 	}
 	
 	void removeFromDatabase() throws SQLException

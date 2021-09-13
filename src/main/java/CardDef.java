@@ -119,7 +119,7 @@ class CardDef extends DBEnabledClass
 	void handleRemove() throws SQLException
 	{
 		super.handleRemove();
-		dm.cardDefinitions.remove(this);
+		dm.cardDefinitions.remove(imageFilename);
 	}
 	
 	void removeFromDatabase() throws SQLException

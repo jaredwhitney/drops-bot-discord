@@ -77,7 +77,7 @@ class CardPack extends DBEnabledClass
 	void handleRemove() throws SQLException
 	{
 		super.handleRemove();
-		dm.cardPacks.remove(this);
+		dm.cardPacks.remove(packName);
 	}
 	
 	void removeFromDatabase() throws SQLException
