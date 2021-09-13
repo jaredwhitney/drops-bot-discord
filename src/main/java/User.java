@@ -88,7 +88,7 @@ class User extends DBEnabledClass
 		PreparedStatement statement = dm.connection.prepareStatement(
 			"UPDATE user SET "
 			+ "lastDropTime = ?,"
-			+ "lastDungeonTime = ?"
+			+ "lastDungeonTime = ?,"
 			+ "lastTrainTime = ?"
 			+ " WHERE userid = ?"
 		);

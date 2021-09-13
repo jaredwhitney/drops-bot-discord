@@ -55,6 +55,7 @@ class DiscordBot
 					if (!messageContent.toUpperCase().startsWith(dm.settings.botPrefix.toUpperCase()))
 						return;
 					final String command = messageContent.substring(dm.settings.botPrefix.length()).split(" ")[0].trim();
+					final String messageArgs = messageContent.substring(dm.settings.botPrefix.length()+command.length()+1).trim();
 					final GuildMessageChannel discordChannelObj = (GuildMessageChannel)message.getChannel().block();
 					final var discordUserObj = message.getAuthor().orElseThrow();
 					final var discordGuildObj = discordChannelObj.getGuild().block().getId();
@@ -159,7 +160,12 @@ class DiscordBot
 					}
 					if ("view".equalsIgnoreCase(command) || "v".equalsIgnoreCase(command))
 					{
-						String id = message.getContent().split(" ")[1].trim();
+						if (messageArgs.split(" ").length != 1)
+						{
+							discordChannelObj.createMessage("Sorry " + nickname +", you need to call view with a single card ID :(").subscribe();
+							return;
+						}
+						String id = messageArgs.split(" ")[0].trim();
 						CardInst card = dm.cardInstances.get(id);
 						if (card != null)
 						{
@@ -181,7 +187,12 @@ class DiscordBot
 					}
 					if ("train".equalsIgnoreCase(command) || "tr".equalsIgnoreCase(command))
 					{
-						String id = message.getContent().split(" ")[1].trim();
+						if (messageArgs.split(" ").length != 1)
+						{
+							discordChannelObj.createMessage("Sorry " + nickname +", you need to call train with a single card ID :(").subscribe();
+							return;
+						}
+						String id = messageArgs.split(" ")[0].trim();
 						CardInst card = dm.cardInstances.get(id);
 						if (card.owner != user)
 						{
@@ -220,7 +231,7 @@ class DiscordBot
 					}
 					if ("merge".equalsIgnoreCase(command) || "m".equalsIgnoreCase(command))
 					{
-						if (message.getContent().split(" ").length != 1 + dm.settings.cardsNeededToMerge)
+						if (messageArgs.split(" ").length != dm.settings.cardsNeededToMerge)
 						{
 							String msg = "Wrong number of cards! You need to call the command like this:\n" + dm.settings.botPrefix + "merge";
 							for (int i = 0; i < dm.settings.cardsNeededToMerge; i++)
@@ -228,30 +239,30 @@ class DiscordBot
 							discordChannelObj.createMessage(msg).subscribe();
 							return;
 						}
-						String[] pieces = message.getContent().split(" ");
-						CardInst[] cards = new CardInst[pieces.length-1];
+						String[] pieces = messageArgs.split(" ");
+						CardInst[] cards = new CardInst[pieces.length];
 						boolean cardMaxxed = false;
-						for (int i = 1; i < pieces.length; i++)
+						for (int i = 0; i < pieces.length; i++)
 						{
-							cards[i-1] = dm.cardInstances.get(pieces[i]);
-							if (cards[i-1] == null)
+							cards[i] = dm.cardInstances.get(pieces[i]);
+							if (cards[i] == null)
 							{
 								discordChannelObj.createMessage("Sorry " + nickname +", I couldn't find card \"" + pieces[i] + "\" :(").subscribe();
 								return;
 							}
-							if (cards[i-1].owner != user)
+							if (cards[i].owner != user)
 							{
 								discordChannelObj.createMessage("Sorry " + nickname + ", you don't own card \"" + pieces[i] + "\"!").subscribe();
 								return;
 							}
-							if (cards[i-1].level >= 100)
+							if (cards[i].level >= 100)
 								cardMaxxed = true;
-							if (cards[i-1].stars != cards[0].stars)
+							if (cards[i].stars != cards[0].stars)
 							{
 								discordChannelObj.createMessage("Sorry " + nickname +", the cards you passed to merge weren't all at the same star level :(").subscribe();
 								return;
 							}
-							if (cards[i-1].def != cards[0].def)
+							if (cards[i].def != cards[0].def)
 							{
 								discordChannelObj.createMessage("Sorry " + nickname +", the cards you passed to merge weren't all for the same card definition :(").subscribe();
 								return;
