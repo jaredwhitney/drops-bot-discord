@@ -77,7 +77,10 @@ class DiscordBot
 					}
 					if ("help".equalsIgnoreCase(command))
 					{
-						discordChannelObj.createMessage("Commands:\n  ~drop\n  ~inv\n  ~view [id]\n  ~dg\n  ~cd\n  ~help".replaceAll("\\~", dm.settings.botPrefix)).block();
+						String mergeCommand = "merge";
+						for (int i = 0; i < dm.settings.cardsNeededToMerge; i++)
+							mergeCommand += " [cardId" + (i+1) + "]";
+						discordChannelObj.createMessage("Commands:\n  ~drop\n  ~inventory\n  ~view [cardId]\n  ~dungeon\n  ~cooldown\n  ~train [cardId]\n~" + mergeCommand + "\n  ~help".replaceAll("\\~", dm.settings.botPrefix)).block();
 					}
 					if ("drop".equalsIgnoreCase(command) || "dr".equalsIgnoreCase(command))
 					{
@@ -175,6 +178,96 @@ class DiscordBot
 						{
 							discordChannelObj.createMessage("Sorry " + nickname +", I couldn't find card \"" + id + "\" :(").subscribe();
 						}
+					}
+					if ("train".equalsIgnoreCase(command) || "tr".equalsIgnoreCase(command))
+					{
+						String id = message.getContent().split(" ")[1].trim();
+						CardInst card = dm.cardInstances.get(id);
+						if (card.owner != user)
+						{
+							discordChannelObj.createMessage("Sorry " + nickname + ", you don't own that card!").subscribe();
+							return;
+						}
+						if (card != null)
+						{
+							if (System.currentTimeMillis()-user.lastTrainTime < dm.settings.trainCooldownMillis)
+							{
+								discordChannelObj.createMessage("Sorry " + nickname +", you need to wait another " + formatDuration(dm.settings.trainCooldownMillis-(System.currentTimeMillis()-user.lastTrainTime)) + " to train a card :(").subscribe();
+								return;
+							}
+							user.lastTrainTime = System.currentTimeMillis();
+							user.handleUpdate(null);
+							
+							var oldCard = card.clone();
+							
+							int gain = (int)(Math.random()*4)+1;
+							card.level = card.level+gain;
+							
+							card.handleUpdate(oldCard);
+							
+							discordChannelObj.createEmbed(spec ->
+								spec.setTitle("Training Results for " + card.def.displayName)
+								.addField("Level", card.level+" (+" + gain + ")", true)
+								.setImage(dm.settings.siteUrl + "/cardinst/" + card.id)
+								.setFooter("drops?", dm.settings.siteUrl + "/img/botprofile.png")
+								.setTimestamp(Instant.now())
+							).subscribe();
+						}
+						else
+						{
+							discordChannelObj.createMessage("Sorry " + nickname +", I couldn't find card \"" + id + "\" :(").subscribe();
+						}
+					}
+					if ("merge".equalsIgnoreCase(command) || "m".equalsIgnoreCase(command))
+					{
+						if (message.getContent().split(" ").length != 1 + dm.settings.cardsNeededToMerge)
+						{
+							String msg = "Wrong number of cards! You need to call the command like this:\n" + dm.settings.botPrefix + "merge";
+							for (int i = 0; i < dm.settings.cardsNeededToMerge; i++)
+								msg += " [cardId" + (i+1) + "]";
+							discordChannelObj.createMessage(msg).subscribe();
+							return;
+						}
+						String[] pieces = message.getContent().split(" ");
+						CardInst[] cards = new CardInst[pieces.length-1];
+						boolean cardMaxxed = false;
+						for (int i = 1; i < pieces.length; i++)
+						{
+							cards[i-1] = dm.cardInstances.get(pieces[i]);
+							if (cards[i-1] == null)
+							{
+								discordChannelObj.createMessage("Sorry " + nickname +", I couldn't find card \"" + pieces[i] + "\" :(").subscribe();
+								return;
+							}
+							if (cards[i-1].owner != user)
+							{
+								discordChannelObj.createMessage("Sorry " + nickname + ", you don't own card \"" + pieces[i] + "\"!").subscribe();
+								return;
+							}
+							if (cards[i-1].level >= 100)
+								cardMaxxed = true;
+							if (cards[i-1].stars != cards[0].stars)
+							{
+								discordChannelObj.createMessage("Sorry " + nickname +", the cards you passed to merge weren't all at the same star level :(").subscribe();
+								return;
+							}
+							if (cards[i-1].def != cards[0].def)
+							{
+								discordChannelObj.createMessage("Sorry " + nickname +", the cards you passed to merge weren't all for the same card definition :(").subscribe();
+								return;
+							}
+						}
+						if (!cardMaxxed)
+						{
+							discordChannelObj.createMessage("Sorry " + nickname +", at least one of the cards you're merging has to be level 100 :(").subscribe();
+							return;
+						}
+						CardInst newCard = genCard(cards[0].def);
+						newCard.stars = cards[0].stars + 1;
+						newCard.handleAdd();
+						for (CardInst card : cards)
+							card.handleRemove();
+						discordChannelObj.createMessage("Merge success! Enjoy your new " + newCard.stars + " star " + newCard.def.displayName + " (level " + newCard.level + ") [id: " + newCard.id + "]").subscribe();
 					}
 					if ("dg".equalsIgnoreCase(command) || "dungeon".equalsIgnoreCase(command))
 					{

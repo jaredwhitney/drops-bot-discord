@@ -221,6 +221,21 @@
 <button class="p-button--positive">Save changes</button>
 </fieldset>
 <fieldset>
+<h3>Training Settings</h3>
+<label for="trainCooldownMillis">Train cooldown (in milliseconds)</label>
+<input class="p-form__input" type="text" name="trainCooldownMillis" id="trainCooldownMillis" value="<<>>trainCooldownMillis<<>>"><br>
+<button class="p-button--positive">Save changes</button>
+</fieldset>
+<fieldset>
+<h3>Merging Settings</h3>
+<label for="cardsNeededToMerge-input"># of cards needed to merge</label>
+<div class="p-slider__wrapper">
+  <input type="range" min="1" max="9" value="<<>>cardsNeededToMerge<<>>" step="1" id="cardsNeededToMerge" name="cardsNeededToMerge">
+  <input class="p-slider__input" type="text" maxlength="2" id="cardsNeededToMerge-input" tabindex="0">
+</div>
+<button class="p-button--positive">Save changes</button>
+</fieldset>
+<fieldset>
 	<h3>Bot Config</h3>
 	<div class="p-form-validation is-info">
 		<label for="botPrefix">Prefix</label>
@@ -290,6 +305,8 @@
 		"dropCooldownMillis": <<>>dropCooldownMillis<<>>,
 		"dungeonOptions": <<>>dungeonOptions<<>>,
 		"dungeonCooldownMillis": <<>>dungeonCooldownMillis<<>>,
+		"trainCooldownMillis": <<>>trainCooldownMillis<<>>,
+		"cardsNeededToMerge": <<>>cardsNeededToMerge<<>>,
 		"botPrefix": "<<>>botPrefix<<>>",
 		"botClientId": "<<>>botClientId<<>>",
 		"botToken": "<<>>botToken<<>>",
@@ -316,6 +333,7 @@
 		dropNumCardsText.value = dropNumCardsSlider.value;
 	});
 	dropNumCardsText.value = dropNumCardsSlider.value;
+	
 	var dungeonNumCardsSlider = document.getElementById('dungeonOptions');
 	var dungeonNumCardsText = document.getElementById('dungeonOptions-input');
 	dungeonNumCardsText.addEventListener('input', function() {
@@ -329,6 +347,22 @@
 		dungeonNumCardsText.value = dungeonNumCardsSlider.value;
 	});
 	dungeonNumCardsText.value = dungeonNumCardsSlider.value;
+	
+	var mergeNumCardsSlider = document.getElementById('cardsNeededToMerge');
+	var mergeNumCardsText = document.getElementById('cardsNeededToMerge-input');
+	mergeNumCardsText.addEventListener('input', function() {
+		mergeNumCardsText.value = Math.max(Math.min(mergeNumCardsText.value, 9), 0);
+		if (isNaN(mergeNumCardsText.value-0)) {
+			mergeNumCardsText.value = mergeNumCardsSlider.value;
+		}
+		mergeNumCardsSlider.value = mergeNumCardsText.value;
+	});
+	mergeNumCardsSlider.addEventListener('input', function() {
+		mergeNumCardsText.value = mergeNumCardsSlider.value;
+	});
+	mergeNumCardsText.value = mergeNumCardsSlider.value;
+	
+	
 </script>
 </body>
 </html>

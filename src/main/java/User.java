@@ -9,6 +9,7 @@ class User extends DBEnabledClass
 	String userId;
 	long lastDropTime;
 	long lastDungeonTime;
+	long lastTrainTime;
 	
 	Map<String,CardInst> inventory = new HashMap<String,CardInst>();
 	
@@ -33,6 +34,7 @@ class User extends DBEnabledClass
 				+ "userid string UNIQUE,"
 				+ "lastDropTime long NOT NULL,"
 				+ "lastDungeonTime long NOT NULL,"
+				+ "lastTrainTime long NOT NULL,"
 				+ "PRIMARY KEY (userid)"
 			+ ")"
 		);
@@ -47,6 +49,7 @@ class User extends DBEnabledClass
 			obj.userId = userRS.getString("userid");
 			obj.lastDropTime = userRS.getLong("lastDropTime");
 			obj.lastDungeonTime = userRS.getLong("lastDungeonTime");
+			obj.lastTrainTime = userRS.getLong("lastTrainTime");
 			dm.users.put(obj.userId, obj);
 		}
 	}
@@ -66,14 +69,15 @@ class User extends DBEnabledClass
 	{
 		PreparedStatement statement = dm.connection.prepareStatement(
 			"INSERT INTO user ("
-				+ "userid, lastDropTime, lastDungeonTime"
+				+ "userid, lastDropTime, lastDungeonTime, lastTrainTime"
 			+ ") VALUES ("
-				+ "?, ?, ?"
+				+ "?, ?, ?, ?"
 			+ ")"
 		);
 		statement.setString(1, userId);
 		statement.setLong(2, lastDropTime);
 		statement.setLong(3, lastDungeonTime);
+		statement.setLong(4, lastTrainTime);
 		statement.executeUpdate();
 	}
 	
@@ -85,11 +89,13 @@ class User extends DBEnabledClass
 			"UPDATE user SET "
 			+ "lastDropTime = ?,"
 			+ "lastDungeonTime = ?"
+			+ "lastTrainTime = ?"
 			+ " WHERE userid = ?"
 		);
 		statement.setLong(1, lastDropTime);
 		statement.setLong(2, lastDungeonTime);
-		statement.setString(3, userId);
+		statement.setLong(3, lastTrainTime);
+		statement.setString(4, userId);
 		statement.executeUpdate();
 	}
 	
