@@ -175,7 +175,7 @@ class DiscordBot
 								.addField("ID", card.id, true)
 								.addField("Stars", card.stars+"", true)
 								.addField("Level", card.level+"", true)
-								.setImage(dm.settings.siteUrl + "/cardinst/" + card.id)
+								.setImage(dm.settings.siteUrl + "/cardinst/" + card.id + "?nonce=" + System.currentTimeMillis())
 								.setFooter("drops?", dm.settings.siteUrl + "/img/botprofile.png")
 								.setTimestamp(Instant.now())
 							).subscribe();
@@ -219,7 +219,7 @@ class DiscordBot
 							discordChannelObj.createEmbed(spec ->
 								spec.setTitle("Training Results for " + card.def.displayName)
 								.addField("Level", card.level+" (+" + gain + ")", true)
-								.setImage(dm.settings.siteUrl + "/cardinst/" + card.id)
+								.setImage(dm.settings.siteUrl + "/cardinst/" + card.id + "?nonce=" + System.currentTimeMillis())
 								.setFooter("drops?", dm.settings.siteUrl + "/img/botprofile.png")
 								.setTimestamp(Instant.now())
 							).subscribe();

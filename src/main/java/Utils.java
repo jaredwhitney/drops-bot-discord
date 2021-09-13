@@ -106,13 +106,13 @@ class Utils
 	{
 		if (level < 0)
 			return unknownBorderImage;
-		if (level < 10)
-			return ironBorderImage;
 		if (level < 25)
+			return ironBorderImage;
+		if (level < 50)
 			return bronzeBorderImage;
-		if (level < 45)
+		if (level < 75)
 			return silverBorderImage;
-		if (level < 70)
+		if (level < 100)
 			return goldBorderImage;
 		return diamondBorderImage;
 	}
