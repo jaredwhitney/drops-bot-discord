@@ -194,13 +194,13 @@ class DiscordBot
 						}
 						String id = messageArgs.split(" ")[0].trim();
 						CardInst card = dm.cardInstances.get(id);
-						if (card.owner != user)
-						{
-							discordChannelObj.createMessage("Sorry " + nickname + ", you don't own that card!").subscribe();
-							return;
-						}
 						if (card != null)
 						{
+							if (card.owner != user)
+							{
+								discordChannelObj.createMessage("Sorry " + nickname + ", you don't own that card!").subscribe();
+								return;
+							}
 							if (System.currentTimeMillis()-user.lastTrainTime < dm.settings.trainCooldownMillis)
 							{
 								discordChannelObj.createMessage("Sorry " + nickname +", you need to wait another " + formatDuration(dm.settings.trainCooldownMillis-(System.currentTimeMillis()-user.lastTrainTime)) + " to train a card :(").subscribe();
