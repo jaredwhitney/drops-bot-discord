@@ -81,7 +81,7 @@ class DiscordBot
 						String mergeCommand = "merge";
 						for (int i = 0; i < dm.settings.cardsNeededToMerge; i++)
 							mergeCommand += " [cardId" + (i+1) + "]";
-						discordChannelObj.createMessage("Commands:\n  ~drop\n  ~inventory\n  ~view [cardId]\n  ~dungeon\n  ~cooldown\n  ~train [cardId]\n~" + mergeCommand + "\n  ~help".replaceAll("\\~", dm.settings.botPrefix)).block();
+						discordChannelObj.createMessage(("Commands:\n  ~drop\n  ~inventory\n  ~view [cardId]\n  ~dungeon\n  ~cooldown\n  ~train [cardId]\n  ~" + mergeCommand + "\n  ~help").replaceAll("\\~", dm.settings.botPrefix)).block();
 					}
 					if ("drop".equalsIgnoreCase(command) || "dr".equalsIgnoreCase(command))
 					{
