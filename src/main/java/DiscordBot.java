@@ -282,6 +282,7 @@ class DiscordBot
 							return;
 						}
 						CardInst newCard = genCard(cards[0].def);
+						newCard.owner = user;
 						newCard.stars = cards[0].stars + 1;
 						newCard.handleAdd();
 						for (CardInst card : cards)
