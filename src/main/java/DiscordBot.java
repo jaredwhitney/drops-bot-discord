@@ -250,6 +250,14 @@ class DiscordBot
 								discordChannelObj.createMessage("Sorry " + nickname +", I couldn't find card \"" + pieces[i] + "\" :(").subscribe();
 								return;
 							}
+							for (int j = 0; j < i; j++)
+							{
+								if (cards[i].id == cards[j].id)
+								{
+									discordChannelObj.createMessage("Sorry " + nickname +", you can't pass the same card to merge more than once (triggered by card \"" + pieces[i] + "\") :(").subscribe();
+									return;
+								}
+							}
 							if (cards[i].owner != user)
 							{
 								discordChannelObj.createMessage("Sorry " + nickname + ", you don't own card \"" + pieces[i] + "\"!").subscribe();
