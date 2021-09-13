@@ -55,7 +55,7 @@ class DiscordBot
 					if (!messageContent.toUpperCase().startsWith(dm.settings.botPrefix.toUpperCase()))
 						return;
 					final String command = messageContent.substring(dm.settings.botPrefix.length()).split(" ")[0].trim();
-					final String messageArgs = messageContent.substring(dm.settings.botPrefix.length()+command.length()+1).trim();
+					final String messageArgs = messageContent.substring(dm.settings.botPrefix.length()+command.length()).trim();
 					final GuildMessageChannel discordChannelObj = (GuildMessageChannel)message.getChannel().block();
 					final var discordUserObj = message.getAuthor().orElseThrow();
 					final var discordGuildObj = discordChannelObj.getGuild().block().getId();
