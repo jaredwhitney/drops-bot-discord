@@ -9,6 +9,7 @@ import java.io.ByteArrayOutputStream;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -81,7 +82,10 @@ class DiscordBot
 						String mergeCommand = "merge";
 						for (int i = 0; i < dm.settings.cardsNeededToMerge; i++)
 							mergeCommand += " [cardId" + (i+1) + "]";
-						discordChannelObj.createMessage(("Commands:\n  ~drop\n  ~inventory\n  ~view [cardId]\n  ~dungeon\n  ~cooldown\n  ~train [cardId]\n  ~" + mergeCommand + "\n  ~help").replaceAll("\\~", dm.settings.botPrefix)).block();
+						String fuseCommand = "fuse";
+						for (int i = 0; i < dm.settings.cardsNeededToFuse; i++)
+							fuseCommand += " [cardId" + (i+1) + "]";
+						discordChannelObj.createMessage(("Commands:\n  ~drop\n  ~inventory\n  ~view [cardId]\n  ~dungeon\n  ~cooldown\n  ~train [cardId]\n  ~" + mergeCommand + "\n~fuse [1s|2s|...]\n~" + fuseCommand + "\n  ~help").replaceAll("\\~", dm.settings.botPrefix)).block();
 					}
 					if ("drop".equalsIgnoreCase(command) || "dr".equalsIgnoreCase(command))
 					{
@@ -155,7 +159,7 @@ class DiscordBot
 					{
 						String cardsStr = "";
 						for (CardInst card : user.inventory.values())
-							cardsStr += " - " + card.def.displayName + " [" + card.id + "] (" + card.stars + " stars, level " + card.level + ")\n";
+							cardsStr += " - " + (card.favorited?"💖":"") + card.def.displayName + " [" + card.id + "] (" + card.stars + " stars, level " + card.level + ")\n";
 						discordChannelObj.createMessage(nickname + "'s Inventory:\n" + cardsStr).block();
 					}
 					if ("view".equalsIgnoreCase(command) || "v".equalsIgnoreCase(command))
@@ -175,6 +179,7 @@ class DiscordBot
 								.addField("ID", card.id, true)
 								.addField("Stars", card.stars+"", true)
 								.addField("Level", card.level+"", true)
+								.addField("Favorited", card.favorited+"", true)
 								.setImage(dm.settings.siteUrl + "/cardinst/" + card.id + "?nonce=" + System.currentTimeMillis())
 								.setFooter("drops?", dm.settings.siteUrl + "/img/botprofile.png")
 								.setTimestamp(Instant.now())
@@ -184,6 +189,134 @@ class DiscordBot
 						{
 							discordChannelObj.createMessage("Sorry " + nickname +", I couldn't find card \"" + id + "\" :(").subscribe();
 						}
+					}
+					if ("favorite".equalsIgnoreCase(command) || "fav".equalsIgnoreCase(command))
+					{
+						if (messageArgs.split(" ").length != 1)
+						{
+							discordChannelObj.createMessage("Sorry " + nickname +", you need to call favorite on a single card ID :(").subscribe();
+							return;
+						}
+						String id = messageArgs.split(" ")[0].trim();
+						CardInst card = dm.cardInstances.get(id);
+						if (card != null)
+						{
+							if (card.owner != user)
+							{
+								discordChannelObj.createMessage("Sorry " + nickname + ", you don't own that card!").subscribe();
+								return;
+							}
+							var oldCard = card.clone();
+							card.favorited = true;
+							card.handleUpdate(oldCard);
+							discordChannelObj.createMessage("Success! Your card \"" + card.id + "\" has been favorited.").subscribe();
+						}
+						else
+						{
+							discordChannelObj.createMessage("Sorry " + nickname +", I couldn't find card \"" + id + "\" :(").subscribe();
+						}
+					}
+					if ("unfavorite".equalsIgnoreCase(command) || "nfav".equalsIgnoreCase(command))
+					{
+						if (messageArgs.split(" ").length != 1)
+						{
+							discordChannelObj.createMessage("Sorry " + nickname +", you need to call unfavorite on a single card ID :(").subscribe();
+							return;
+						}
+						String id = messageArgs.split(" ")[0].trim();
+						CardInst card = dm.cardInstances.get(id);
+						if (card != null)
+						{
+							if (card.owner != user)
+							{
+								discordChannelObj.createMessage("Sorry " + nickname + ", you don't own that card!").subscribe();
+								return;
+							}
+							var oldCard = card.clone();
+							card.favorited = false;
+							card.handleUpdate(oldCard);
+							discordChannelObj.createMessage("Success! Your card \"" + card.id + "\" has been favorited.").subscribe();
+						}
+						else
+						{
+							discordChannelObj.createMessage("Sorry " + nickname +", I couldn't find card \"" + id + "\" :(").subscribe();
+						}
+					}
+					if ("fuse".equalsIgnoreCase(command))
+					{
+						int fuseCardsNeeded = dm.settings.cardsNeededToFuse;
+						String[] args = messageArgs.split(" ");
+						if (args.length == 1 && "1s".equals(args[0]) || "2s".equals(args[0]) || "3s".equals(args[0]) || "4s".equals(args[0]))
+						{
+							ArrayList<CardInst> cardOptns = new ArrayList<CardInst>();
+							int nstars = args[0].charAt(0)-'0';
+							for (CardInst card : user.inventory.values())
+								if (card.stars == nstars && !card.favorited)
+									cardOptns.add(card);
+							int numNewCards = cardOptns.size() / fuseCardsNeeded;
+							if (numNewCards == 0)
+							{
+								discordChannelObj.createMessage("Sorry " + nickname +", you need at least " + fuseCardsNeeded + " unfavorited " + nstars + " cards to do that. You only have " + cardOptns.size() + ". :(").subscribe();
+								return;
+							}
+							for (int i = 0; i < numNewCards; i++)
+							{
+								CardInst newCard = genCard();
+								newCard.owner = user;
+								newCard.stars = nstars+1;
+								newCard.handleAdd();
+								discordChannelObj.createMessage("Fuse success [" + (i+1) + "/" + numNewCards + "]! Enjoy your new " + newCard.stars + " star " + newCard.def.displayName + " (level " + newCard.level + ") [id: " + newCard.id + "]").subscribe();
+							}
+							for (int i = 0; i < numNewCards * fuseCardsNeeded; i++)
+							{
+								CardInst card = cardOptns.get(i);
+								card.handleRemove();
+							}
+							return;
+						}
+						if (args.length != fuseCardsNeeded)
+						{
+							String msg = "Wrong number of cards! You need to call the command like this:\n" + dm.settings.botPrefix + "fuse";
+							for (int i = 0; i < fuseCardsNeeded; i++)
+								msg += " [cardId" + (i+1) + "]";
+							discordChannelObj.createMessage(msg).subscribe();
+							return;
+						}
+						CardInst[] cards = new CardInst[args.length];
+						for (int i = 0; i < args.length; i++)
+						{
+							cards[i] = dm.cardInstances.get(args[i]);
+							if (cards[i] == null)
+							{
+								discordChannelObj.createMessage("Sorry " + nickname +", I couldn't find card \"" + args[i] + "\" :(").subscribe();
+								return;
+							}
+							for (int j = 0; j < i; j++)
+							{
+								if (cards[i].id == cards[j].id)
+								{
+									discordChannelObj.createMessage("Sorry " + nickname +", you can't pass the same card to fuse more than once (triggered by card \"" + args[i] + "\") :(").subscribe();
+									return;
+								}
+							}
+							if (cards[i].owner != user)
+							{
+								discordChannelObj.createMessage("Sorry " + nickname + ", you don't own card \"" + args[i] + "\"!").subscribe();
+								return;
+							}
+							if (cards[i].stars != cards[0].stars)
+							{
+								discordChannelObj.createMessage("Sorry " + nickname +", the cards you passed to fuse weren't all at the same star level :(").subscribe();
+								return;
+							}
+						}
+						CardInst newCard = genCard();
+						newCard.owner = user;
+						newCard.stars = cards[0].stars + 1;
+						newCard.handleAdd();
+						for (CardInst card : cards)
+							card.handleRemove();
+						discordChannelObj.createMessage("Fuse success! Enjoy your new " + newCard.stars + " star " + newCard.def.displayName + " (level " + newCard.level + ") [id: " + newCard.id + "]").subscribe();
 					}
 					if ("train".equalsIgnoreCase(command) || "tr".equalsIgnoreCase(command))
 					{
@@ -388,12 +521,14 @@ class DiscordBot
 					{
 						long dropCd = dm.settings.dropCooldownMillis - (System.currentTimeMillis() - user.lastDropTime);
 						long dungeonCd = dm.settings.dungeonCooldownMillis - (System.currentTimeMillis() - user.lastDungeonTime);
+						long trainCd = dm.settings.trainCooldownMillis - (System.currentTimeMillis() - user.lastTrainTime);
 						discordChannelObj.createEmbed(spec ->
 							spec.setTitle("Cooldowns")
 								.setDescription("for " + nickname)
 								.setThumbnail(discordUserObj.getAvatarUrl())
 								.addField("Drop", (dropCd <= 0 ? "[READY]" : formatDuration(dropCd)), false)
 								.addField("Dungeon", (dungeonCd <= 0 ? "[READY]" : formatDuration(dungeonCd)), true)
+								.addField("Train", (trainCd <= 0 ? "[READY]" : formatDuration(trainCd)), true)
 								.setFooter("drops?", dm.settings.siteUrl + "/img/botprofile.png")
 								.setTimestamp(Instant.now())
 						).subscribe();
@@ -513,6 +648,13 @@ class DiscordBot
 		}
 		catch (Exception ex)
 		{}
+	}
+	
+	public CardInst genCard()
+	{
+		Collection<CardDef> defs = dm.cardDefinitions.values();
+		CardDef def = defs.stream().skip(rand.nextInt(defs.size())).findFirst().get();
+		return genCard(def);
 	}
 	
 	public CardInst genCard(CardDef cardDef)

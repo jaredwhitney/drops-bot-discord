@@ -540,6 +540,7 @@ class WebServer
 								.replaceAll("\\Q<<>>dungeonCooldownMillis<<>>\\E", dm.settings.dungeonCooldownMillis+"")
 								.replaceAll("\\Q<<>>trainCooldownMillis<<>>\\E", dm.settings.trainCooldownMillis+"")
 								.replaceAll("\\Q<<>>cardsNeededToMerge<<>>\\E", dm.settings.cardsNeededToMerge+"")
+								.replaceAll("\\Q<<>>cardsNeededToFuse<<>>\\E", dm.settings.cardsNeededToFuse+"")
 								.replaceAll("\\Q<<>>botPrefix<<>>\\E", escapeString(dm.settings.botPrefix))
 								.replaceAll("\\Q<<>>botClientId<<>>\\E", escapeString(dm.settings.botClientId))
 								.replaceAll("\\Q<<>>botToken<<>>\\E", escapeString(dm.settings.botToken))
@@ -579,6 +580,7 @@ class WebServer
 						newSettings.dungeonCooldownMillis = req.getMultipart("dungeonCooldownMillis").asInt();
 						newSettings.trainCooldownMillis = req.getMultipart("trainCooldownMillis").asInt();
 						newSettings.cardsNeededToMerge = req.getMultipart("cardsNeededToMerge").asInt();
+						newSettings.cardsNeededToFuse = req.getMultipart("cardsNeededToFuse").asInt(); 
 						newSettings.botPrefix = req.getMultipart("botPrefix").asString();
 						newSettings.botClientId = req.getMultipart("botClientId").asString();
 						newSettings.botToken = req.getMultipart("botToken").asString();

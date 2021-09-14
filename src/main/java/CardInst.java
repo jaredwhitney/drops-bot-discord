@@ -9,6 +9,7 @@ class CardInst extends DBEnabledClass
 	int level;
 	int stars;
 	User owner;
+	boolean favorited;
 	
 	public CardInst(DatabaseManager databaseManager)
 	{
@@ -23,6 +24,7 @@ class CardInst extends DBEnabledClass
 		card.level = level;
 		card.stars = stars;
 		card.owner = owner;
+		card.favorited = favorited;
 		return card;
 	}
 	
@@ -35,6 +37,7 @@ class CardInst extends DBEnabledClass
 				+ "level integer NOT NULL,"
 				+ "stars integer NOT NULL,"
 				+ "owner string,"
+				+ "favorited integer,"
 				+ "FOREIGN KEY (rawName)"
 					+ " REFERENCES cardDefinition(imageFilename),"
 				+ "FOREIGN KEY (owner)"
@@ -53,6 +56,7 @@ class CardInst extends DBEnabledClass
 			obj.id = cardInstanceRS.getString("id");
 			obj.level = cardInstanceRS.getInt("level");
 			obj.stars = cardInstanceRS.getInt("stars");
+			obj.favorited = cardInstanceRS.getInt("favorited")!=0;
 			dm.cardInstances.put(obj.id, obj);
 		}
 	}
@@ -81,9 +85,9 @@ class CardInst extends DBEnabledClass
 	{
 		PreparedStatement statement = dm.connection.prepareStatement(
 			"INSERT INTO cardInstance ("
-				+ "rawName, id, level, stars, owner"
+				+ "rawName, id, level, stars, owner, favorited"
 			+ ") VALUES ("
-				+ "?, ?, ?, ?, ?"
+				+ "?, ?, ?, ?, ?, ?"
 			+ ")"
 		);
 		statement.setString(1, def.imageFilename);
@@ -91,6 +95,7 @@ class CardInst extends DBEnabledClass
 		statement.setInt(3, level);
 		statement.setInt(4, stars);
 		statement.setString(5, owner.userId);
+		statement.setInt(6, favorited?1:0);
 		statement.executeUpdate();
 	}
 	
@@ -107,14 +112,16 @@ class CardInst extends DBEnabledClass
 				+ "rawName = ?,"
 				+ "level = ?,"
 				+ "stars = ?,"
-				+ "owner = ?"
+				+ "owner = ?,"
+				+ "favorited = ?"
 			+ " WHERE id = ?"
 		);
 		statement.setString(1, def.imageFilename);
 		statement.setInt(2, level);
 		statement.setInt(3, stars);
 		statement.setString(4, owner.userId);
-		statement.setString(5, id);
+		statement.setInt(5, favorited?1:0);
+		statement.setString(6, id);
 		statement.executeUpdate();
 	}
 	

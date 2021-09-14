@@ -23,6 +23,9 @@ class Settings extends DBEnabledClass
 	// Number of cards needed to merge
 	int cardsNeededToMerge;
 	
+	// Number of cards needed to fuse
+	int cardsNeededToFuse;
+	
 	// Local port to run the webserver on
 	int serverPort;
 	
@@ -64,6 +67,7 @@ class Settings extends DBEnabledClass
 				+ "dungeonCooldownMillis int NOT NULL,"
 				+ "trainCooldownMillis int NOT NULL,"
 				+ "cardsNeededToMerge int NOT NULL,"
+				+ "cardsNeededToFuse int NOT NULL,"
 				+ "serverPort int NOT NULL,"
 				+ "botPrefix string NOT NULL,"
 				+ "siteUrl string NOT NULL,"
@@ -85,9 +89,9 @@ class Settings extends DBEnabledClass
 		{
 			PreparedStatement statement = dm.connection.prepareStatement(
 				"INSERT INTO settings ("
-					+ "dropNumCards, dropCooldownMillis, dungeonOptions, dungeonCooldownMillis, trainCooldownMillis, cardsNeededToMerge, serverPort, botPrefix, siteUrl, cardsFolder, authHandler, botToken, botClientId"
+					+ "dropNumCards, dropCooldownMillis, dungeonOptions, dungeonCooldownMillis, trainCooldownMillis, cardsNeededToMerge, cardsNeededToFuse, serverPort, botPrefix, siteUrl, cardsFolder, authHandler, botToken, botClientId"
 				+ ") VALUES ("
-					+ "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?"
+					+ "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?"
 				+ ")"
 			);
 			statement.setInt(1, 3);
@@ -96,13 +100,14 @@ class Settings extends DBEnabledClass
 			statement.setInt(4, 600000);
 			statement.setInt(5, 600000);
 			statement.setInt(6, 3);
-			statement.setInt(7, 28002);
-			statement.setString(8, ",");
-			statement.setString(9, "http://127.0.0.1:28002");
-			statement.setString(10, "");
+			statement.setInt(7, 7);
+			statement.setInt(8, 28002);
+			statement.setString(9, ",");
+			statement.setString(10, "http://127.0.0.1:28002");
 			statement.setString(11, "");
 			statement.setString(12, "");
 			statement.setString(13, "");
+			statement.setString(14, "");
 			statement.executeUpdate();
 			readFromDatabase(dm);
 			return;
@@ -114,6 +119,7 @@ class Settings extends DBEnabledClass
 		settings.dungeonCooldownMillis = settingsRS.getInt("dungeonCooldownMillis");
 		settings.trainCooldownMillis = settingsRS.getInt("trainCooldownMillis");
 		settings.cardsNeededToMerge = settingsRS.getInt("cardsNeededToMerge");
+		settings.cardsNeededToFuse = settingsRS.getInt("cardsNeededToFuse");
 		settings.serverPort = settingsRS.getInt("serverPort");
 		settings.botPrefix = settingsRS.getString("botPrefix");
 		settings.siteUrl = settingsRS.getString("siteUrl");
@@ -143,6 +149,7 @@ class Settings extends DBEnabledClass
 				+ "dungeonCooldownMillis = ?,"
 				+ "trainCooldownMillis = ?,"
 				+ "cardsNeededToMerge = ?,"
+				+ "cardsNeededToFuse = ?,"
 				+ "serverPort = ?,"
 				+ "botPrefix = ?,"
 				+ "siteUrl = ?,"
@@ -157,13 +164,14 @@ class Settings extends DBEnabledClass
 		statement.setInt(4, dungeonCooldownMillis);
 		statement.setInt(5, trainCooldownMillis);
 		statement.setInt(6, cardsNeededToMerge);
-		statement.setInt(7, serverPort);
-		statement.setString(8, botPrefix);
-		statement.setString(9, siteUrl);
-		statement.setString(10, cardsFolder);
-		statement.setString(11, authHandler);
-		statement.setString(12, botToken);
-		statement.setString(13, botClientId);
+		statement.setInt(7, cardsNeededToFuse);
+		statement.setInt(8, serverPort);
+		statement.setString(9, botPrefix);
+		statement.setString(10, siteUrl);
+		statement.setString(11, cardsFolder);
+		statement.setString(12, authHandler);
+		statement.setString(13, botToken);
+		statement.setString(14, botClientId);
 		statement.executeUpdate();
 	}
 	void removeFromDatabase() throws SQLException

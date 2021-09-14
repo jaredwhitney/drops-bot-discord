@@ -203,7 +203,7 @@
 <label for="dropNumCards-input"># of cards to drop at once</label>
 <div class="p-slider__wrapper">
   <input type="range" min="1" max="9" value="<<>>dropNumCards<<>>" step="1" id="dropNumCards" name="dropNumCards">
-  <input class="p-slider__input" type="text" maxlength="2" id="dropNumCards-input" tabindex="0">
+  <input class="p-slider__input" type="text" maxlength="1" id="dropNumCards-input" tabindex="0">
 </div>
 <label for="dropCooldownMillis">Drop cooldown (in milliseconds)</label>
 <input class="p-form__input" type="text" name="dropCooldownMillis" id="dropCooldownMillis" value="<<>>dropCooldownMillis<<>>"><br>
@@ -214,7 +214,7 @@
 <label for="dungeonOptions-input"># of dungeon answers to choose from</label>
 <div class="p-slider__wrapper">
   <input type="range" min="1" max="9" value="<<>>dungeonOptions<<>>" step="1" id="dungeonOptions" name="dungeonOptions">
-  <input class="p-slider__input" type="text" maxlength="2" id="dungeonOptions-input" tabindex="0">
+  <input class="p-slider__input" type="text" maxlength="1" id="dungeonOptions-input" tabindex="0">
 </div>
 <label for="dungeonCooldownMillis">Dungeon cooldown (in milliseconds)</label>
 <input class="p-form__input" type="text" name="dungeonCooldownMillis" id="dungeonCooldownMillis" value="<<>>dungeonCooldownMillis<<>>"><br>
@@ -231,7 +231,16 @@
 <label for="cardsNeededToMerge-input"># of cards needed to merge</label>
 <div class="p-slider__wrapper">
   <input type="range" min="1" max="9" value="<<>>cardsNeededToMerge<<>>" step="1" id="cardsNeededToMerge" name="cardsNeededToMerge">
-  <input class="p-slider__input" type="text" maxlength="2" id="cardsNeededToMerge-input" tabindex="0">
+  <input class="p-slider__input" type="text" maxlength="1" id="cardsNeededToMerge-input" tabindex="0">
+</div>
+<button class="p-button--positive">Save changes</button>
+</fieldset>
+<fieldset>
+<h3>Fusing Settings</h3>
+<label for="cardsNeededToFuse-input"># of cards needed to fuse</label>
+<div class="p-slider__wrapper">
+  <input type="range" min="3" max="15" value="<<>>cardsNeededToFuse<<>>" step="1" id="cardsNeededToFuse" name="cardsNeededToFuse">
+  <input class="p-slider__input" type="text" maxlength="2" id="cardsNeededToFuse-input" tabindex="0">
 </div>
 <button class="p-button--positive">Save changes</button>
 </fieldset>
@@ -307,6 +316,7 @@
 		"dungeonCooldownMillis": <<>>dungeonCooldownMillis<<>>,
 		"trainCooldownMillis": <<>>trainCooldownMillis<<>>,
 		"cardsNeededToMerge": <<>>cardsNeededToMerge<<>>,
+		"cardsNeededToFuse": <<>>cardsNeededToFuse<<>>,
 		"botPrefix": "<<>>botPrefix<<>>",
 		"botClientId": "<<>>botClientId<<>>",
 		"botToken": "<<>>botToken<<>>",
@@ -361,6 +371,20 @@
 		mergeNumCardsText.value = mergeNumCardsSlider.value;
 	});
 	mergeNumCardsText.value = mergeNumCardsSlider.value;
+	
+	var fuseNumCardsSlider = document.getElementById('cardsNeededToFuse');
+	var fuseNumCardsText = document.getElementById('cardsNeededToFuse-input');
+	fuseNumCardsText.addEventListener('input', function() {
+		fuseNumCardsText.value = Math.max(Math.min(fuseNumCardsText.value, 15), 0);
+		if (isNaN(fuseNumCardsText.value-0)) {
+			fuseNumCardsText.value = fuseNumCardsSlider.value;
+		}
+		fuseNumCardsSlider.value = fuseNumCardsText.value;
+	});
+	fuseNumCardsSlider.addEventListener('input', function() {
+		fuseNumCardsText.value = fuseNumCardsSlider.value;
+	});
+	fuseNumCardsText.value = fuseNumCardsSlider.value;
 	
 	
 </script>
