@@ -85,7 +85,7 @@ class DiscordBot
 						String fuseCommand = "fuse";
 						for (int i = 0; i < dm.settings.cardsNeededToFuse; i++)
 							fuseCommand += " [cardId" + (i+1) + "]";
-						discordChannelObj.createMessage(("Commands:\n  ~drop\n  ~inventory\n  ~view [cardId]\n  ~dungeon\n  ~cooldown\n  ~train [cardId]\n  ~" + mergeCommand + "\n~fuse [1s|2s|...]\n~" + fuseCommand + "\n  ~help").replaceAll("\\~", dm.settings.botPrefix)).block();
+						discordChannelObj.createMessage(("Commands:\n  ~drop\n  ~inventory\n  ~view [cardId]\n  ~dungeon\n  ~cooldown\n  ~train [cardId]\n  ~" + mergeCommand + "\n  ~favorite [cardId]\n  ~unfavorite [cardId]\n  ~fuse [1s|2s|...]\n  ~" + fuseCommand + "\n  ~help").replaceAll("\\~", dm.settings.botPrefix)).block();
 					}
 					if ("drop".equalsIgnoreCase(command) || "dr".equalsIgnoreCase(command))
 					{
