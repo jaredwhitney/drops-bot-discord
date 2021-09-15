@@ -256,7 +256,7 @@ class DiscordBot
 							int numNewCards = cardOptns.size() / fuseCardsNeeded;
 							if (numNewCards == 0)
 							{
-								discordChannelObj.createMessage("Sorry " + nickname +", you need at least " + fuseCardsNeeded + " unfavorited " + nstars + " cards to do that. You only have " + cardOptns.size() + ". :(").subscribe();
+								discordChannelObj.createMessage("Sorry " + nickname +", you need at least " + fuseCardsNeeded + " unfavorited " + nstars + "-star cards to do that. You only have " + cardOptns.size() + ". :(").subscribe();
 								return;
 							}
 							for (int i = 0; i < numNewCards; i++)
