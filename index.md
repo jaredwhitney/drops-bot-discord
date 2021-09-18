@@ -1,37 +1,96 @@
-## Welcome to GitHub Pages
+# drops? Bot
 
-You can use the [editor on GitHub](https://github.com/jaredwhitney/drops-bot-discord/edit/gh-pages/index.md) to maintain and preview the content for your website in Markdown files.
+This is a Discord bot implementing a small card-collection game that allows users to collect new cards periodically, level up cards, answer trivia, and more!
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+The bot allows users to create cards and manage settings through a Web UI, and is designed to be as easy to set up as possible.
 
-### Markdown
+Note that drops? Bot is currently in pre-release, so don't expect things to be totally stable yet.
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+----
 
-```markdown
-Syntax highlighted code block
+### Acknowledgements
 
-# Header 1
-## Header 2
-### Header 3
+This bot makes use of [Discord4J](https://github.com/Discord4J/Discord4J) to make it easier to use Discord's APIs from Java.
 
-- Bulleted
-- List
+Many of the features of the game this bot implements are heavily based on another card-collection bot from Discord called "Vita". There is very little information out there about this bot online at the moment (it shut down sometime in Spring 2021), and as such there isn't really anything to link here. Sorry!
 
-1. Numbered
-2. List
+----
 
-**Bold** and _Italic_ and `Code` text
+# Running the Bot
 
-[Link](url) and ![Image](src)
+### Prerequisites
+- Java (version 11.0.2 or higher)
+- A Discord application with a bot user
+- An open port and an (ideally static) IP address or domain name (reverse proxies such as nginx work too)
+- [OPTIONAL] A zkrAuth server (for external access to the web server, currently unreleased)
+
+### Run using a command-line argument
+```bash
+java -jar DropsBot.jar YOUR_DATABASE_FILE.db
 ```
 
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
+### Run using a config file
+Put the database file path into "drops-db-path.cfg"
+```bash
+java -jar DropsBot.jar
+```
 
-### Jekyll Themes
+### Settings to change (see Using the Web Server)
+1. Auth Handler public URL
+2. Public URL
+3. Card Images Folder
+4. Bot Client ID
+5. Bot Token
 
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/jaredwhitney/drops-bot-discord/settings/pages). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
+# Using the web server
+By default, the web server will be accessible via http://127.0.0.1:28002.
 
-### Support or Contact
+When accessing the web server via **any** IP address other than `127.0.0.1`, you will need to authenticate through a zkrAuth server. Note that this includes other commonly-used aliases for the local machine such as `localhost`.
 
-Having trouble with Pages? Check out our [documentation](https://docs.github.com/categories/github-pages-basics/) or [contact support](https://support.github.com/contact) and we’ll help you sort it out.
+Once you are at the web server, you will see a navigation bar on the left with the following pages.
+
+### All Cards
+You can add / edit cards on this page.
+Click on a card to edit it, and add additional information (to be used in dungeons et-al) as desired.
+Note that cards cannot currently be removed.
+### Card Packs
+You can add / remove card packs on this page.
+Note that card packs cannot be removed if they contain any cards.
+Note that card packs cannot currently be edited.
+### Info Fields
+You can add / edit / remove fields that store extra information on cards here.
+Note that you need to set up these fields here before you can add values to them for cards on the All Cards page.
+Note that info fields cannot be removed if they are used in any cards.
+### General Settings
+You can configure settings to control the application, the web server, and the discord bot here.
+### Add to Server
+If you have your bot's client id set correctly in the General Settings page, this will link to a form on Discord's site allowing you to add the bot to a Discord server you have admin permissions on.
+### My Account
+On this page you can see how you are currently authenticated, and log out if desired.
+
+# Using the Discord Bot
+Invite the bot to your Discord server (this can be done easily via the web server).
+
+Type `,help` (replacing `,` with whatever prefix you have set in the web server) to get a list of commands from the bot.
+
+# Development
+
+### Trello Board
+https://trello.com/b/GvQsiItV/drops-bot
+
+### Prerequisites
+- Gradle (version 7.2 or higher)
+
+### Building
+```bash
+gradle build shadowJar
+```
+
+### Running using Gradle
+```bash
+gradle run --args=YOUR_DATABASE_FILE.db
+```
+
+### Running using the jar file
+Run the jar file at `build/libs/DropsBot.jar` using the instructions from the "Running the Bot" section above -- this is the same jar file distributed in releases.
+
