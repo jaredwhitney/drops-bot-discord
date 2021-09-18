@@ -36,11 +36,10 @@ java -jar DropsBot.jar
 ```
 
 ### Settings to change (see Using the Web Server)
-1. Auth Handler public URL
-2. Public URL
-3. Card Images Folder
-4. Bot Client ID
-5. Bot Token
+1. Public URL
+2. Card Images Folder
+3. Bot Client ID
+4. Bot Token
 
 # Using the web server
 By default, the web server will be accessible via http://127.0.0.1:28002.
