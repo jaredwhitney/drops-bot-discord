@@ -1,3 +1,21 @@
+# About this Bot
+
+This is a Discord bot implementing a small card-collection game that allows users to collect new cards periodically, level up cards, answer trivia, and more!
+
+The bot allows users to create cards and manage settings through a Web UI, and is designed to be as easy to set up as possible.
+
+Note that drops? Bot is currently in pre-release, so don't expect things to be totally stable yet.
+
+----
+
+### Acknowledgements
+
+This bot makes use of [Discord4J](https://github.com/Discord4J/Discord4J) to make it easier to use Discord's APIs from Java.
+
+Many of the features of the game this bot implements are heavily based on another card-collection bot from Discord called "Vita". There is very little information out there about this bot online at the moment (it shut down sometime in Spring 2021), and as such there isn't really anything to link here. Sorry!
+
+----
+
 # Running the Bot
 
 ### Prerequisites
