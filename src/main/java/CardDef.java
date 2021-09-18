@@ -10,6 +10,7 @@ class CardDef extends DBEnabledClass
 	String imageFilename;
 	String displayName;
 	String displayDescription;
+	float cardRarityMultiplier;
 	CardPack cardPack;
 	
 	Map<String,CardInst> instances = new HashMap<String,CardInst>();
@@ -26,6 +27,7 @@ class CardDef extends DBEnabledClass
 		card.imageFilename = imageFilename;
 		card.displayName = displayName;
 		card.displayDescription = displayDescription;
+		card.cardRarityMultiplier = cardRarityMultiplier;
 		card.cardPack = cardPack;
 		card.instances.putAll(instances);
 		card.info.putAll(info);
@@ -40,6 +42,7 @@ class CardDef extends DBEnabledClass
 				+ "displayName string,"
 				+ "displayDescription string,"
 				+ "packName string NOT NULL,"
+				+ "cardRarityMultiplier float NOT NULL,"
 				+ "FOREIGN KEY (packName)"
 					+ " REFERENCES cardPack(packName),"
 				+ "PRIMARY KEY (imageFilename)"
@@ -56,6 +59,7 @@ class CardDef extends DBEnabledClass
 			obj.imageFilename = cardDefinitionRS.getString("imageFilename");
 			obj.displayName = cardDefinitionRS.getString("displayName");
 			obj.displayDescription = cardDefinitionRS.getString("displayDescription");
+			obj.cardRarityMultiplier = cardDefinitionRS.getFloat("cardRarityMultiplier");
 			dm.cardDefinitions.put(obj.imageFilename, obj);
 		}
 	}
@@ -83,15 +87,16 @@ class CardDef extends DBEnabledClass
 	{
 		PreparedStatement statement = dm.connection.prepareStatement(
 			"INSERT INTO cardDefinition ("
-				+ "imageFilename, displayName, displayDescription, packName"
+				+ "imageFilename, displayName, displayDescription, packName, cardRarityMultiplier"
 			+ ") VALUES ("
-				+ "?, ?, ?, ?"
+				+ "?, ?, ?, ?, ?"
 			+ ")"
 		);
 		statement.setString(1, imageFilename);
 		statement.setString(2, displayName);
 		statement.setString(3, displayDescription);
 		statement.setString(4, cardPack.packName);
+		statement.setFloat(5, cardRarityMultiplier);
 		statement.executeUpdate();
 	}
 	
@@ -106,13 +111,15 @@ class CardDef extends DBEnabledClass
 			"UPDATE cardDefinition SET "
 				+ "displayName = ?,"
 				+ "displayDescription = ?,"
-				+ "packName = ?"
+				+ "packName = ?,"
+				+ "cardRarityMultiplier = ?"
 			+ " WHERE imageFilename = ?"
 		);
 		statement.setString(1, displayName);
 		statement.setString(2, displayDescription);
 		statement.setString(3, cardPack.packName);
-		statement.setString(4, imageFilename);
+		statement.setFloat(4, cardRarityMultiplier);
+		statement.setString(5, imageFilename);
 		statement.executeUpdate();
 	}
 	

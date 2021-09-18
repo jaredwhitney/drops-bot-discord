@@ -221,6 +221,8 @@
 				<label for="cardPack">Card Pack</label>
 				<select name="cardPack" class="card-pack-selector" id="cardPack" style="box-sizing: border-box;width: 100%;">
 				</select>
+				<label for="cardRarityMultiplier">Rarity Multiplier</label>
+				<input class="p-form__input" type="range" step="0.05" name="cardRarityMultiplier" id="cardRarityMultiplier" value="1.0" max="1.0" min="0.05" style="box-sizing: border-box;width: 100%"/></input>
 				<button class="p-button--positive">Save changes</button>
 				<button id="newExtraButton" class="p-button" type="button">Add extra info</button>
 				<input name="imageFilename" id="imageFilename" type="hidden" value="~NULL~"></input>
@@ -343,6 +345,7 @@
 				document.getElementById('displayName').value = name;
 				document.getElementById('displayDescription').value = data[id].displayDescription||"";
 				document.getElementById('cardPack').value = data[id].cardPack
+				document.getElementById('cardRarityMultiplier').value = data[id].cardRarityMultiplier
 				while (extraInfo.firstChild) {
 					extraInfo.removeChild(extraInfo.lastChild);
 				}

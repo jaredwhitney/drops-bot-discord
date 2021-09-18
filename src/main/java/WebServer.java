@@ -256,6 +256,7 @@ class WebServer
 							datajson += "\t\t\"displayDescription\": \"" + escapeString(card.displayDescription) + "\",\n";
 						datajson += "\t\t\"image\": \"" + escapeString(dm.settings.siteUrl) + "/card/" + escapeString(card.imageFilename) + "\",\n";
 						datajson += "\t\t\"cardPack\": \"" + escapeString(card.cardPack.packName) + "\",\n";
+						datajson += "\t\t\"cardRarityMultiplier\": " + card.cardRarityMultiplier + ",\n";
 						datajson += "\t\t\"extraInfo\": [\n";
 						for (ArrayList<CardInfoFieldEntry> entryList : card.info.values())
 						{
@@ -304,6 +305,7 @@ class WebServer
 						card.imageFilename = rawName;
 						card.displayName = displayName;
 						card.displayDescription = displayDescription;
+						card.cardRarityMultiplier = 1f;
 						card.cardPack = dm.cardPacks.get(cardPack);
 						
 						Path destPath = Paths.get(dm.settings.cardsFolder, rawName);
@@ -337,6 +339,7 @@ class WebServer
 						String cardPack = req.getMultipart("cardPack").asString();
 						String rawName = req.getMultipart("imageFilename").asString();
 						String displayName = req.getMultipart("displayName").asString();
+						float cardRarityMultiplier = req.getMultipart("cardRarityMultiplier").asFloat();
 						if (displayName.length() == 0)
 							displayName = SysUtils.toTitleCase(rawName);
 						
@@ -345,6 +348,7 @@ class WebServer
 						card.imageFilename = rawName;
 						card.displayName = displayName;
 						card.displayDescription = displayDescription;
+						card.cardRarityMultiplier = cardRarityMultiplier;
 						card.cardPack = dm.cardPacks.get(cardPack);
 						
 						card.handleUpdate(cardOld);

@@ -13,7 +13,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.NavigableMap;
 import java.util.Random;
+import java.util.TreeMap;
 import javax.imageio.ImageIO;
 import rip.$0k.utils.SysUtils;
 import rip.$0k.utils.TimeConstants;
@@ -110,7 +112,7 @@ class DiscordBot
 						ArrayList<CardDef> cardSend = new ArrayList<CardDef>();
 						for (int i = 0; i < dm.settings.dropNumCards; i++)
 						{
-							CardDef cardDef = cards[(int)(Math.random()*cards.length)];
+							CardDef cardDef = randomCard(cards);
 							cardStrSend += (i>0?"+":"") + cardDef.imageFilename;
 							cardSend.add(cardDef);
 						}
@@ -461,7 +463,7 @@ class DiscordBot
 							for (CardDef card : dm.cardDefinitions.values())
 								if (card.info.get(dungeonField) != null && card.info.get(dungeonField).size() > 0)
 									cardOptions.add(card);
-							CardDef dungeonCard = cardOptions.get((int)(Math.random()*cardOptions.size()));
+							CardDef dungeonCard = randomCard(cardOptions);
 							
 							ArrayList<CardInfoFieldEntry> possibleCorrectEntries = dungeonCard.info.get(dungeonField);
 							CardInfoFieldEntry correctEntry = possibleCorrectEntries.get((int)(Math.random()*possibleCorrectEntries.size()));
@@ -650,10 +652,25 @@ class DiscordBot
 		{}
 	}
 	
+	public CardDef randomCard(CardDef[] optns)
+	{
+		RandomCollection<CardDef> col = new RandomCollection<CardDef>(rand);
+		for (CardDef def : optns)
+			col.add(def.cardRarityMultiplier, def);
+		return col.next();
+	}
+	
+	public CardDef randomCard(Collection<CardDef> optns)
+	{
+		RandomCollection<CardDef> col = new RandomCollection<CardDef>(rand);
+		for (CardDef def : optns)
+			col.add(def.cardRarityMultiplier, def);
+		return col.next();
+	}
+	
 	public CardInst genCard()
 	{
-		Collection<CardDef> defs = dm.cardDefinitions.values();
-		CardDef def = defs.stream().skip(rand.nextInt(defs.size())).findFirst().get();
+		CardDef def = randomCard(dm.cardDefinitions.values());
 		return genCard(def);
 	}
 	
@@ -695,4 +712,31 @@ class DiscordBot
 		long val = (ms/TimeConstants.MILLISECONDS_PER_DAY);
 		return val + " day" + (val==1?"":"s");
 	}
+}
+
+// From https://stackoverflow.com/a/6409791
+class RandomCollection<E> {
+    private final NavigableMap<Double, E> map = new TreeMap<Double, E>();
+    private final Random random;
+    private double total = 0;
+
+    public RandomCollection() {
+        this(new Random());
+    }
+
+    public RandomCollection(Random random) {
+        this.random = random;
+    }
+
+    public RandomCollection<E> add(double weight, E result) {
+        if (weight <= 0) return this;
+        total += weight;
+        map.put(total, result);
+        return this;
+    }
+
+    public E next() {
+        double value = random.nextDouble() * total;
+        return map.higherEntry(value).getValue();
+    }
 }
