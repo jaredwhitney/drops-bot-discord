@@ -22,7 +22,7 @@ class WebServer
 	
 	HttpServer server;
 	Map<String,RenderedImageStorage> renderedImageCache = new HashMap<String,RenderedImageStorage>();
-	private String cardHTML, settingsHTML, cardPackHTML, infoFieldHTML, accountHTML;
+	private String cardHTML, settingsHTML, cardPackHTML, infoFieldHTML, accountHTML, notAdminHTML;
 	private byte[] botProfile;
 	
 	public WebServer(DatabaseManager databaseManager)
@@ -60,20 +60,48 @@ class WebServer
 					}
 				}
 			}
-			AuthHandler auth = new AuthHandler(dm.settings.authHandler);
+			AuthHandler auth = new AuthHandler(dm.settings.authHandler, dm.settings.authApplicationKeys);
 			auth.maxlifetime = -1;	// don't let auth tokens time out to prevent people editing forms from losing their work
 			auth.registerCallbackEndpoint("/auth/callback");
+			PermissionIdentifier adminPermission = null;
+			if (auth.authPath.length() > 0)
+			{
+				if (auth.getSigningKeys() == null)
+				{
+					System.out.println("Couldn't find any auth application keys, generating them now...");
+					auth.generateKeys();
+					dm.settings.authApplicationKeys = auth.getSigningKeys();
+					dm.settings.updateInDatabase();
+				}
+				adminPermission = auth.getPermissionIdentifier("drops-admin");
+				if (!auth.checkApplicationExists())
+				{
+					System.out.println("Application creation success: " + auth.registerApplication("drops? Bot"));
+				}
+				else
+				{
+					System.out.println("Application already exists!");
+				}
+				if (!auth.checkPermissionExists(adminPermission))
+				{
+					System.out.println("Admin permission creation success: " + auth.registerPermission(adminPermission));
+				}
+			}
+			else
+				System.out.println("No auth server found; skipping application / keys setup.");
+			final PermissionIdentifier ADMIN_PERMISSION = adminPermission;
 			
 			cardHTML = DropsBot.readResourceToString("cards.html");
 			settingsHTML = DropsBot.readResourceToString("settings.html");
 			cardPackHTML = DropsBot.readResourceToString("cardpacks.html");
 			infoFieldHTML = DropsBot.readResourceToString("infofields.html");
 			accountHTML = DropsBot.readResourceToString("account.html");
+			notAdminHTML = DropsBot.readResourceToString("notAdmin.html");
 			botProfile = DropsBot.readResource("botprofile.png");
 			
 			server.accept((req) -> {
 				System.out.println("Request from " + req.domain + " remote addr " + req.getRemoteAddress() + " for url " + req.url);
-				if (auth.handle(req, "drops-admin"))
+				if (auth.handle(req, dm.settings.siteUrl))
 					return;
 				if (req.matches(HttpVerb.GET, "/card/.*"))
 				{
@@ -180,6 +208,15 @@ class WebServer
 					}
 					return;
 				}
+				else if (req.matches(HttpVerb.POST, "/admin/account/logout") || req.matches(HttpVerb.GET, "/admin/account/logout"))
+				{
+					auth.logout();
+					req.respondWithHeaders1(
+						HttpStatus.TEMPORARY_REDIRECT_302,
+						"Redirecting you to <a href=\"/\">the homepage</a>",
+						"Location: /"
+					);
+				}
 				boolean localUserBypass = false;
 				if (req.isLocal())
 				{
@@ -191,8 +228,16 @@ class WebServer
 					req.respond(HttpStatus.NOT_FOUND_404);
 					return;
 				}
-				else if (!auth.enforceValidCredentials("drops-admin"))
-					return;
+				else
+				{
+					if (!auth.enforceValidCredentials(dm.settings.siteUrl))
+						return;
+					if (!auth.checkPermission(ADMIN_PERMISSION))
+					{
+						req.respond(notAdminHTML);
+						return;
+					}
+				}
 				if (req.matches(HttpVerb.GET, "/admin/cardpacks"))
 				{
 					String data = "var data = {\n";
@@ -537,6 +582,10 @@ class WebServer
 				}
 				else if (req.matches(HttpVerb.GET, "/admin/settings"))
 				{
+					String[] admins = auth.listPermissionUsers(ADMIN_PERMISSION);
+					String adminStr = "";
+					for (int i = 0; i < admins.length; i++)
+						adminStr += (i>0?", ":"") + "\"" + escapeString(admins[i]) + "\"";
 					String resp = settingsHTML
 								.replaceAll("\\Q<<>>dropNumCards<<>>\\E", dm.settings.dropNumCards+"")
 								.replaceAll("\\Q<<>>dropCooldownMillis<<>>\\E", dm.settings.dropCooldownMillis+"")
@@ -552,6 +601,7 @@ class WebServer
 								.replaceAll("\\Q<<>>siteUrl<<>>\\E", escapeString(dm.settings.siteUrl))
 								.replaceAll("\\Q<<>>authHandler<<>>\\E", escapeString(dm.settings.authHandler))
 								.replaceAll("\\Q<<>>cardsFolder<<>>\\E", escapeString(dm.settings.cardsFolder))
+								.replaceAll("\\Q<<>>admins<<>>\\E", adminStr)
 								.replaceAll("\\Q<<>>BOT_ADD_URL<<>>\\E", "https://discordapp.com/api/oauth2/authorize?client_id=" + dm.settings.botClientId + "&permissions=243336208192&scope=bot");
 					req.respond(resp);
 				}
@@ -559,17 +609,25 @@ class WebServer
 				{
 					String resp = accountHTML
 								.replaceAll("\\Q<<>>USERNAME<<>>\\E", auth.username)
-								.replaceAll("\\Q<<>>AUTH_URL<<>>\\E", (localUserBypass?("127.0.0.1:" + dm.settings.serverPort):auth.authPath))
 								.replaceAll("\\Q<<>>BOT_ADD_URL<<>>\\E", "https://discordapp.com/api/oauth2/authorize?client_id=" + dm.settings.botClientId + "&permissions=243336208192&scope=bot");
 					req.respond(resp);
 				}
-				else if (req.matches(HttpVerb.POST, "/admin/account/logout"))
+				else if (req.matches(HttpVerb.POST, "/admin/admins/add"))
 				{
-					auth.logout();
+					auth.grantPermission(ADMIN_PERMISSION, req.getMultipart("adminAdd").asString());
 					req.respondWithHeaders1(
 						HttpStatus.TEMPORARY_REDIRECT_302,
-						"Redirecting you to <a href=\"/\">the homepage</a>",
-						"Location: /"
+						"Redirecting you to <a href=\"/admin/settings\">/admin/settings</a>",
+						"Location: /admin/settings"
+					);
+				}
+				else if (req.matches(HttpVerb.POST, "/admin/admins/remove"))
+				{
+					auth.revokePermission(ADMIN_PERMISSION, req.getMultipart("adminRemove").asString());
+					req.respondWithHeaders1(
+						HttpStatus.TEMPORARY_REDIRECT_302,
+						"Redirecting you to <a href=\"/admin/settings\">/admin/settings</a>",
+						"Location: /admin/settings"
 					);
 				}
 				else if (req.matches(HttpVerb.POST, "/admin/settings"))
@@ -592,6 +650,7 @@ class WebServer
 						newSettings.siteUrl = req.getMultipart("siteUrl").asString();
 						newSettings.authHandler = req.getMultipart("authHandler").asString();
 						newSettings.cardsFolder = req.getMultipart("cardsFolder").asString();
+						newSettings.authApplicationKeys = dm.settings.authApplicationKeys;
 						
 						newSettings.handleUpdate(dm.settings);
 						

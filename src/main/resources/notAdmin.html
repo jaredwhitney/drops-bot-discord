@@ -183,31 +183,17 @@
 		</div>
 		</header>
 	<main class="l-main">
-	  <div class="p-strip--light" style="margin-bottom: 2.5rem;">
-		<div class="row">
-		  <p><h1>My Account</h1></p>
-		</div>
-	  </div>
-	  <div class="row">
-			<div class="p-card--highlighted" style="overflow:hidden;">
-				<div class="card__title">
-					<h3>Web Auth<h3>
-					</div>
-				<div class="p-card__content u-vertically-center infofield-add-trigger" style="height:5rem;">
-				<center>
-					<h4>
-						<i class="p-icon--user"></i> <<>>USERNAME<<>>
-					</h4>
-				</center>
-				<form class="p-form p-form--stacked" action="/admin/account/logout" method="post" enctype="multipart/form-data">
-					<button class="p-button--negative" style="width:100%;">Log out</button>
-				</form>
-				</div>
+		<div class="p-notification--negative">
+		  <div class="p-notification__content">
+			<h5 class="p-notification__title">Permissions Error</h5>
+			<p class="p-notification__message">You need to be an admin on this instance of drops-bot to view that page!</p>
+		  </div>
+		  <div class="p-notification__meta">
+			<div class="p-notification__actions">
+			  <a class="p-notification__action" href="/admin/account/logout">Log out</a>
 			</div>
-	  </div>
-	  </main>
-	  </div>
-	  </div>
-	  </body>
-	  </html>
-
+		  </div>
+		</div>
+	</main>
+</div>
+</body>

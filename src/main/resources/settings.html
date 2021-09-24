@@ -185,6 +185,22 @@
 	<main class="l-main">
 	  <div class="p-strip--light" style="margin-bottom: 2.5rem;">
 		<div class="row">
+		  <p><h1>Manage Administrators</h1></p>
+		</div>
+	  </div>
+	  <div class="row" >
+		<form class="p-form p-form--inline" enctype="multipart/form-data" action="/admin/admins/add" method="post">
+			<input id="adminAdd" name="adminAdd" type="text" required></input>
+			<button class="p-button--positive">Add admin</button>
+		</form>
+		<form class="p-form p-form--inline" enctype="multipart/form-data" action="/admin/admins/remove" method="post">
+			<select id="adminRemove" name="adminRemove" required>
+			</select>
+			<button class="p-button--positive">Remove admin</button>
+		</form>
+	  </div>
+	  <div class="p-strip--light" style="margin-bottom: 2.5rem;">
+		<div class="row">
 		  <p><h1>General Settings</h1></p>
 		</div>
 	  </div>
@@ -324,6 +340,16 @@
 		"siteUrl": "<<>>siteUrl<<>>",
 		"authHandler": "<<>>authHandler<<>>",
 		"cardsFolder": "<<>>cardsFolder<<>>"
+	}
+	var admins = [
+		<<>>admins<<>>
+	]
+	var adminRemove = document.getElementById("adminRemove")
+	for (admin of admins) {
+		var optn = document.createElement("option");
+		optn.setAttribute("value", admin)
+		optn.innerHTML = admin
+		adminRemove.appendChild(optn)
 	}
 	
 	for (key of Object.entries(data)) {

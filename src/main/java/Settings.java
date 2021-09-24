@@ -47,6 +47,9 @@ class Settings extends DBEnabledClass
 	// Client ID of the Discord bot's application (this can be made public!)
 	String botClientId;
 	
+	// Application keys to use with the auth server
+	String authApplicationKeys;
+	
 	public Settings(DatabaseManager databaseManager)
 	{
 		dm = databaseManager;
@@ -74,7 +77,8 @@ class Settings extends DBEnabledClass
 				+ "cardsFolder string NOT NULL,"
 				+ "authHandler string NOT NULL,"
 				+ "botToken string NOT NULL,"
-				+ "botClientId string NOT NULL"
+				+ "botClientId string NOT NULL,"
+				+ "authApplicationKeys string"
 			+ ")"
 		);
 	}
@@ -127,6 +131,7 @@ class Settings extends DBEnabledClass
 		settings.authHandler = settingsRS.getString("authHandler");
 		settings.botToken = settingsRS.getString("botToken");
 		settings.botClientId = settingsRS.getString("botClientId");
+		settings.authApplicationKeys = settingsRS.getString("authApplicationKeys");
 		dm.settings = settings;
 	}
 	
@@ -156,7 +161,8 @@ class Settings extends DBEnabledClass
 				+ "cardsFolder = ?,"
 				+ "authHandler = ?,"
 				+ "botToken = ?,"
-				+ "botClientId = ?"
+				+ "botClientId = ?,"
+				+ "authApplicationKeys = ?"
 		);
 		statement.setInt(1, dropNumCards);
 		statement.setInt(2, dropCooldownMillis);
@@ -172,6 +178,7 @@ class Settings extends DBEnabledClass
 		statement.setString(12, authHandler);
 		statement.setString(13, botToken);
 		statement.setString(14, botClientId);
+		statement.setString(15, authApplicationKeys);
 		statement.executeUpdate();
 	}
 	void removeFromDatabase() throws SQLException
