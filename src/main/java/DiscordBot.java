@@ -4,6 +4,7 @@ import discord4j.core.event.domain.message.*;
 import discord4j.core.object.entity.channel.*;
 import discord4j.rest.util.*;
 import discord4j.core.object.reaction.*;
+import discord4j.core.object.presence.*;
 import reactor.core.Disposable;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
@@ -29,6 +30,7 @@ class DiscordBot
 	private DatabaseManager dm;
 	private WebServer ws;
 	
+	DiscordClient client;
 	GatewayDiscordClient gateway;
 	Disposable messageListener, reactionListener;
 	private Map<User,PendingDropInfo> pendingDropInfo = new HashMap<User,PendingDropInfo>();
@@ -54,7 +56,7 @@ class DiscordBot
 				DropsBot.notifyNoBotToken();
 				throw new RuntimeException("No bot token has been set; please do so in the web UI at " + dm.settings.siteUrl + "/admin/settings");
 			}
-			final DiscordClient client = DiscordClient.create(dm.settings.botToken);
+			client = DiscordClient.create(dm.settings.botToken);
 			gateway = client.login().block();
 			
 			messageListener = gateway.on(MessageCreateEvent.class).subscribe(event -> {
@@ -95,7 +97,7 @@ class DiscordBot
 						String fuseCommand = "fuse";
 						for (int i = 0; i < dm.settings.cardsNeededToFuse; i++)
 							fuseCommand += " [cardId" + (i+1) + "]";
-						discordChannelObj.createMessage(("Commands:\n  ~drop\n  ~inventory\n  ~view [cardId]\n  ~dungeon\n  ~cooldown\n  ~train [cardId]\n  ~" + mergeCommand + "\n  ~favorite [cardId]\n  ~unfavorite [cardId]\n  ~fuse [1s|2s|...]\n  ~" + fuseCommand + "\n  ~linkme (account)\n  ~help\nAdmin Commands:\n  ~restart").replaceAll("\\~", dm.settings.botPrefix)).block();
+						discordChannelObj.createMessage(("Commands:\n  ~drop\n  ~inventory\n  ~view [cardId]\n  ~dungeon\n  ~cooldown\n  ~train [cardId]\n  ~" + mergeCommand + "\n  ~favorite [cardId]\n  ~unfavorite [cardId]\n  ~fuse [1s|2s|...]\n  ~" + fuseCommand + "\n  ~linkme (account)\n  ~help\nAdmin Commands:\n  ~restart\n  ~setprefix [prefix]").replaceAll("\\~", dm.settings.botPrefix)).block();
 					}
 					if ("drop".equalsIgnoreCase(command) || "dr".equalsIgnoreCase(command))
 					{
@@ -298,34 +300,35 @@ class DiscordBot
 							return;
 						}
 					}
-					if ("restart".equalsIgnoreCase(command))
+					if ("restart".equalsIgnoreCase(command) || "setprefix".equalsIgnoreCase(command))
 					{
-						String[] linkedUsers = ws.auth.listPermissionUsers(PERMISSION_THIS_ACCT_LINKED);
-						if (linkedUsers == null)
+						String[] linkedAdminAccounts = getLinkedAdminAccounts(PERMISSION_THIS_ACCT_LINKED);
+						if (linkedAdminAccounts == null)
 						{
 							discordChannelObj.createMessage("Sorry " + nickname +", something went wrong with your request :(").subscribe();
 							return;
 						}
-						boolean hasAdmin = false;
-						String adminUsername = null;
-						for (String linkedUser : linkedUsers)
-						{
-							if (ws.auth.checkPermission(ws.ADMIN_PERMISSION, linkedUser))
-							{
-								adminUsername = linkedUser;
-								hasAdmin = true;
-								break;
-							}
-						}
-						if (!hasAdmin)
+						if (linkedAdminAccounts.length == 0)
 						{
 							discordChannelObj.createMessage("Sorry " + nickname +", you need to be linked to a zkrAuth with admin permissions for this drops? Bot instance to do that :(").subscribe();
 							return;
 						}
-						discordChannelObj.createMessage("Restarting as requested by <@" + discordUserId + "> (" + adminUsername + ")...").subscribe();
-						new Thread(()->{DropsBot.restart(()->{
-							discordChannelObj.createMessage("<@" + discordUserId + "> The bot is back online.").subscribe();
-						});}).start();
+						String adminSig = "<@" + discordUserId + "> (" + linkedAdminAccounts[0] + ")";
+						if ("restart".equalsIgnoreCase(command))
+						{
+							discordChannelObj.createMessage("Restarting as requested by " + adminSig + "...").subscribe();
+							new Thread(()->{DropsBot.restart(()->{
+								discordChannelObj.createMessage("<@" + discordUserId + "> The bot is back online.").subscribe();
+							});}).start();
+						}
+						else if ("setprefix".equalsIgnoreCase(command))
+						{
+							Settings newSettings = dm.settings.clone();
+							newSettings.botPrefix = messageArgs.trim();
+							newSettings.handleUpdate(dm.settings);
+							dm.settings = newSettings;
+							discordChannelObj.createMessage("Prefix changed to `" + dm.settings.botPrefix + "` as requested by " + adminSig).subscribe();;
+						}
 					}
 					if ("fuse".equalsIgnoreCase(command))
 					{
@@ -713,10 +716,10 @@ class DiscordBot
 					}
 				}
 			);
+			updateBotStatus(dm.settings);
 			System.out.println("The Discord bot should be up and running!");
 			if (onFullRestart != null)
 				onFullRestart.run();
-			gateway.onDisconnect().block();
 		}
 		catch (Exception ex)
 		{
@@ -725,6 +728,32 @@ class DiscordBot
 			System.out.println("Note: The web-server will continue running.");
 			DropsBot.setSystemTrayNoBot();
 		}
+	}
+	
+	public void updateBotStatus(Settings settings)
+	{
+		try
+		{
+			gateway.updatePresence(Presence.online(Activity.listening(settings.botPrefix + "help"))).subscribe();
+		}
+		catch (Exception ex) {}
+	}
+	
+	public String[] getLinkedAdminAccounts(PermissionIdentifier linkPermission)
+	{
+		String[] linkedUsers = ws.auth.listPermissionUsers(linkPermission);
+		if (linkedUsers == null)
+			return null;
+		String adminUsername = null;
+		ArrayList<String> adminUsers = new ArrayList<String>();
+		for (String linkedUser : linkedUsers)
+		{
+			if (ws.auth.checkPermission(ws.ADMIN_PERMISSION, linkedUser))
+			{
+				adminUsers.add(linkedUser);
+			}
+		}
+		return adminUsers.toArray(String[]::new);
 	}
 	
 	public void shutdown()

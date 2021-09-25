@@ -57,7 +57,23 @@ class Settings extends DBEnabledClass
 	
 	protected Settings clone()
 	{
-		throw new RuntimeException("Settings cannot currently be cloned.");
+		Settings settings = new Settings(dm);
+		settings.dropNumCards = dropNumCards;
+		settings.dropCooldownMillis = dropCooldownMillis;
+		settings.dungeonOptions = dungeonOptions;
+		settings.dungeonCooldownMillis = dungeonCooldownMillis;
+		settings.trainCooldownMillis = trainCooldownMillis;
+		settings.cardsNeededToMerge = cardsNeededToMerge;
+		settings.cardsNeededToFuse = cardsNeededToFuse;
+		settings.serverPort = serverPort;
+		settings.botPrefix = botPrefix;
+		settings.siteUrl = siteUrl;
+		settings.cardsFolder = cardsFolder;
+		settings.authHandler = authHandler;
+		settings.botToken = botToken;
+		settings.botClientId = botClientId;
+		settings.authApplicationKeys = authApplicationKeys;
+		return settings;
 	}
 	
 	static void tableInit(DatabaseManager dm) throws SQLException
@@ -180,6 +196,15 @@ class Settings extends DBEnabledClass
 		statement.setString(14, botClientId);
 		statement.setString(15, authApplicationKeys);
 		statement.executeUpdate();
+	}
+	@Override
+	void updateInObjects(DBEnabledClass previousGeneric)
+	{
+		Settings previous = (Settings)previousGeneric;
+		if (!botPrefix.equals(previous.botPrefix))
+		{
+			DropsBot.discordBot.updateBotStatus(this);
+		}
 	}
 	void removeFromDatabase() throws SQLException
 	{

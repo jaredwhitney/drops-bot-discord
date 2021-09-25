@@ -714,7 +714,7 @@ class WebServer
 				{
 					try
 					{
-						Settings newSettings = new Settings(dm);
+						Settings newSettings = dm.settings.clone();
 						
 						newSettings.dropNumCards = req.getMultipart("dropNumCards").asInt();
 						newSettings.dropCooldownMillis = req.getMultipart("dropCooldownMillis").asInt();
@@ -730,7 +730,6 @@ class WebServer
 						newSettings.siteUrl = req.getMultipart("siteUrl").asString();
 						newSettings.authHandler = req.getMultipart("authHandler").asString();
 						newSettings.cardsFolder = req.getMultipart("cardsFolder").asString();
-						newSettings.authApplicationKeys = dm.settings.authApplicationKeys;
 						
 						newSettings.handleUpdate(dm.settings);
 						
