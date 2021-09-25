@@ -25,7 +25,7 @@ class WebServer
 	PermissionIdentifier ADMIN_PERMISSION;
 	Map<String,RenderedImageStorage> renderedImageCache = new HashMap<String,RenderedImageStorage>();
 	Map<String,PendingLinkInfo> pendingLinkInfo = new HashMap<String,PendingLinkInfo>();
-	private String cardHTML, settingsHTML, cardPackHTML, infoFieldHTML, accountHTML, notAdminHTML, linkmeHTML;
+	private String cardHTML, settingsHTML, cardPackHTML, infoFieldHTML, accountHTML, notAdminHTML, linkmeHTML, linkmeSuccessHTML, linkmeRejectHTML;
 	private byte[] botProfile;
 	
 	public WebServer(DatabaseManager databaseManager)
@@ -102,6 +102,8 @@ class WebServer
 			accountHTML = DropsBot.readResourceToString("account.html");
 			notAdminHTML = DropsBot.readResourceToString("notAdmin.html");
 			linkmeHTML = DropsBot.readResourceToString("linkme.html");
+			linkmeSuccessHTML = DropsBot.readResourceToString("linkmesuccess.html");
+			linkmeRejectHTML = DropsBot.readResourceToString("linkmerejected.html");
 			botProfile = DropsBot.readResource("botprofile.png");
 			
 			server.accept((req) -> {
@@ -276,14 +278,19 @@ class WebServer
 						success = success && auth.grantPermission(info.linkPermission);
 						if (success)
 						{
-							info.discordChannel.createMessage("Linked account \"" + info.discordUsername + "#" + info.discordHash + "\" with zkrAuth account \"" + info.username + "\"!").subscribe();
-							System.out.println("Linkme success");
+							info.discordChannel.createMessage("Linked <@" + name + "> with zkrAuth account " + info.username).subscribe();
+							req.respond(linkmeSuccessHTML.replaceAll("<<>>MESSAGE<<>>", "Linked account " + info.discordUsername + "#" + info.discordHash + " with zkrAuth account " + info.username + "."));
 						}
 						else
 						{
-							info.discordChannel.createMessage("Failed to link account \"" + info.discordUsername + "#" + info.discordHash + "\" with zkrAuth account \"" + info.username + "\" :(").subscribe();
-							System.out.println("Linkme failure");
+							req.respond(pageHtml
+								.replaceAll("<<>>ERROR_MESSAGE<<>>", "Link failed! This might be due to a server config issue, or an auth server issue.")
+							);
 						}
+					}
+					else if (req.matches(HttpVerb.GET, "/linkme/reject"))
+					{
+						req.respond(linkmeRejectHTML.replaceAll("<<>>MESSAGE<<>>", "Rejected linking of account " + info.discordUsername + "#" + info.discordHash + " and zkrAuth account " + info.username + ". No discord notification will be sent."));
 					}
 					pendingLinkInfo.remove(name);
 					System.out.println("Linkme invalidated link");

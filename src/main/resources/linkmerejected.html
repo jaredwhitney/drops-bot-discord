@@ -1,0 +1,29 @@
+<head>
+	<title>drops? bot - Link Account</title>
+	<link rel="stylesheet" href="https://assets.ubuntu.com/v1/vanilla-framework-version-2.35.0.min.css" />
+</head>
+<body class="u-vertically-center" style="height: 80vh;">
+	<div class="row" id="container">
+	<div class="col-2"></div>
+	<div class="col-8">
+	<div class="p-notification--information">
+	  <div class="p-notification__content">
+		<h5 class="p-notification__title">Link rejected!</h5>
+		<p class="p-notification__message" id="message"><<>>MESSAGE<<>></p>
+	  </div>
+	</div>
+	</div>
+	</div>
+	<script>
+	  function escapeHtml(unsafe) {
+		// see https://stackoverflow.com/a/6234804
+		return unsafe
+			 .replace(/&/g, "&amp;")
+			 .replace(/</g, "&lt;")
+			 .replace(/>/g, "&gt;")
+			 .replace(/"/g, "&quot;")
+			 .replace(/'/g, "&#039;");
+	  }
+	  document.getElementById('message').innerHTML = escapeHtml("<<>>MESSAGE<<>>")
+	 </script>
+</body>
