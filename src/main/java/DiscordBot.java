@@ -4,6 +4,7 @@ import discord4j.core.event.domain.message.*;
 import discord4j.core.object.entity.channel.*;
 import discord4j.rest.util.*;
 import discord4j.core.object.reaction.*;
+import reactor.core.Disposable;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.sql.SQLException;
@@ -19,6 +20,7 @@ import java.util.TreeMap;
 import javax.imageio.ImageIO;
 import rip.$0k.utils.SysUtils;
 import rip.$0k.utils.TimeConstants;
+import rip.$0k.http.PermissionIdentifier;
 
 class DiscordBot
 {
@@ -28,6 +30,7 @@ class DiscordBot
 	private WebServer ws;
 	
 	GatewayDiscordClient gateway;
+	Disposable messageListener, reactionListener;
 	private Map<User,PendingDropInfo> pendingDropInfo = new HashMap<User,PendingDropInfo>();
 	private Map<User,PendingDungeonInfo> pendingDungeonInfo = new HashMap<User,PendingDungeonInfo>();
 	
@@ -38,6 +41,10 @@ class DiscordBot
 	}
 	
 	public void start()
+	{
+		start(null);
+	}
+	public void start(Runnable onFullRestart)
 	{
 		try
 		{
@@ -50,7 +57,7 @@ class DiscordBot
 			final DiscordClient client = DiscordClient.create(dm.settings.botToken);
 			gateway = client.login().block();
 			
-			gateway.on(MessageCreateEvent.class).subscribe(event -> {
+			messageListener = gateway.on(MessageCreateEvent.class).subscribe(event -> {
 				try
 				{
 					final Message message = event.getMessage();
@@ -64,6 +71,7 @@ class DiscordBot
 					final var discordGuildObj = discordChannelObj.getGuild().block().getId();
 					final var discordMemberObj = discordUserObj.asMember(discordGuildObj).block();
 					final String discordUserId = discordUserObj.getId().asString();
+					final PermissionIdentifier PERMISSION_THIS_ACCT_LINKED = ws.auth.getPermissionIdentifier("discord/" + discordUserId);
 					final String nickname = discordMemberObj.getDisplayName();
 					User user = dm.users.get(discordUserId);
 					if (user == null)
@@ -87,7 +95,7 @@ class DiscordBot
 						String fuseCommand = "fuse";
 						for (int i = 0; i < dm.settings.cardsNeededToFuse; i++)
 							fuseCommand += " [cardId" + (i+1) + "]";
-						discordChannelObj.createMessage(("Commands:\n  ~drop\n  ~inventory\n  ~view [cardId]\n  ~dungeon\n  ~cooldown\n  ~train [cardId]\n  ~" + mergeCommand + "\n  ~favorite [cardId]\n  ~unfavorite [cardId]\n  ~fuse [1s|2s|...]\n  ~" + fuseCommand + "\n  ~help").replaceAll("\\~", dm.settings.botPrefix)).block();
+						discordChannelObj.createMessage(("Commands:\n  ~drop\n  ~inventory\n  ~view [cardId]\n  ~dungeon\n  ~cooldown\n  ~train [cardId]\n  ~" + mergeCommand + "\n  ~favorite [cardId]\n  ~unfavorite [cardId]\n  ~fuse [1s|2s|...]\n  ~" + fuseCommand + "\n  ~linkme (account)\n  ~help\nAdmin Commands:\n  ~restart").replaceAll("\\~", dm.settings.botPrefix)).block();
 					}
 					if ("drop".equalsIgnoreCase(command) || "dr".equalsIgnoreCase(command))
 					{
@@ -243,6 +251,81 @@ class DiscordBot
 						{
 							discordChannelObj.createMessage("Sorry " + nickname +", I couldn't find card \"" + id + "\" :(").subscribe();
 						}
+					}
+					if ("linkme".equalsIgnoreCase(command))
+					{
+						if (messageArgs.split(" ").length != 1)
+						{
+							discordChannelObj.createMessage("Sorry " + nickname +", you need to call linkme on a single zkrAuth username (or no arguments) :(").subscribe();
+							return;
+						}
+						String username = messageArgs.split(" ")[0].trim();
+						if (username.length() == 0)
+						{
+							String[] linkedUsers = ws.auth.listPermissionUsers(PERMISSION_THIS_ACCT_LINKED);
+							if (linkedUsers == null)
+							{
+								discordChannelObj.createMessage("Sorry " + nickname +", something went wrong with your request :(").subscribe();
+								return;
+							}
+							String acctsString = "zkrAuth accounts linked to " + nickname + ":\n";
+							for (String linkedUser : linkedUsers)
+								acctsString += "\t" + linkedUser + (ws.auth.checkPermission(ws.ADMIN_PERMISSION, linkedUser) ? " [ADMIN]" : "") + "\n";
+							discordChannelObj.createMessage(acctsString).subscribe();
+						}
+						else if (ws.auth.checkPermission(PERMISSION_THIS_ACCT_LINKED, username))
+						{
+							boolean okay = ws.auth.revokePermission(PERMISSION_THIS_ACCT_LINKED, username);
+							if (!okay)
+							{
+								discordChannelObj.createMessage("Sorry " + nickname +", something went wrong with your request :(").subscribe();
+								return;
+							}
+							else
+							{
+								discordChannelObj.createMessage("Successfully unlinked discord user \"" + nickname + "\" from zkrAuth user \"" + username + "\".").subscribe();
+								return;
+							}
+						}
+						else
+						{
+							if (!username.contains("@")) {
+								username = username + "@" + dm.settings.authHandler;
+							}
+							PendingLinkInfo pendingLinkInfo = new PendingLinkInfo(discordChannelObj, username, discordUserObj.getUsername(), discordUserObj.getDiscriminator(), discordUserObj.getAvatarUrl(), PERMISSION_THIS_ACCT_LINKED);
+							ws.pendingLinkInfo.put(discordUserId, pendingLinkInfo);
+							discordChannelObj.createMessage("Hi " + nickname + ", please log in to " + dm.settings.siteUrl + "/linkme?name=" + discordUserId + " as " + username + " to finish linking your account.").subscribe();
+							return;
+						}
+					}
+					if ("restart".equalsIgnoreCase(command))
+					{
+						String[] linkedUsers = ws.auth.listPermissionUsers(PERMISSION_THIS_ACCT_LINKED);
+						if (linkedUsers == null)
+						{
+							discordChannelObj.createMessage("Sorry " + nickname +", something went wrong with your request :(").subscribe();
+							return;
+						}
+						boolean hasAdmin = false;
+						String adminUsername = null;
+						for (String linkedUser : linkedUsers)
+						{
+							if (ws.auth.checkPermission(ws.ADMIN_PERMISSION, linkedUser))
+							{
+								adminUsername = linkedUser;
+								hasAdmin = true;
+								break;
+							}
+						}
+						if (!hasAdmin)
+						{
+							discordChannelObj.createMessage("Sorry " + nickname +", you need to be linked to a zkrAuth with admin permissions for this drops? Bot instance to do that :(").subscribe();
+							return;
+						}
+						discordChannelObj.createMessage("Restarting as requested by <@" + discordUserId + "> (" + adminUsername + ")...").subscribe();
+						new Thread(()->{DropsBot.restart(()->{
+							discordChannelObj.createMessage("<@" + discordUserId + "> The bot is back online.").subscribe();
+						});}).start();
 					}
 					if ("fuse".equalsIgnoreCase(command))
 					{
@@ -543,7 +626,7 @@ class DiscordBot
 				}
 			});
 			
-			gateway.getEventDispatcher().on(ReactionAddEvent.class).subscribe(
+			reactionListener = gateway.getEventDispatcher().on(ReactionAddEvent.class).subscribe(
 				event ->
 				{
 					try
@@ -631,6 +714,8 @@ class DiscordBot
 				}
 			);
 			System.out.println("The Discord bot should be up and running!");
+			if (onFullRestart != null)
+				onFullRestart.run();
 			gateway.onDisconnect().block();
 		}
 		catch (Exception ex)
@@ -647,6 +732,18 @@ class DiscordBot
 		try
 		{
 			gateway.logout();
+		}
+		catch (Exception ex)
+		{}
+		try
+		{
+			messageListener.dispose();
+		}
+		catch (Exception ex)
+		{}
+		try
+		{
+			reactionListener.dispose();
 		}
 		catch (Exception ex)
 		{}

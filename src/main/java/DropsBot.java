@@ -42,6 +42,10 @@ public final class DropsBot
 	 */
 	public static void main(final String[] args) throws SQLException
 	{
+		main(args, null);
+	}
+	public static void main(final String[] args, Runnable onFullRestart) throws SQLException
+	{
 		
 		System.out.println("*** drops? bot main method called ***");
 		
@@ -113,7 +117,7 @@ public final class DropsBot
 		
 		// Start the discord bot
 		discordBot = new DiscordBot(databaseManager, webServer);
-		discordBot.start();
+		discordBot.start(onFullRestart);
 		
 	}
 	
@@ -145,6 +149,10 @@ public final class DropsBot
 	
 	public static void restart()
 	{
+		restart(null);
+	}
+	public static void restart(Runnable onFullRestart)
+	{
 		if (webServer != null)
 			webServer.shutdown();
 		if (discordBot != null)
@@ -169,7 +177,7 @@ public final class DropsBot
 			webServer = null;
 			discordBot = null;
 			databaseManager = null;
-			main(argStore);
+			main(argStore, onFullRestart);
 		}
 		catch (Exception ex)
 		{

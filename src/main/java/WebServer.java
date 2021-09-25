@@ -21,8 +21,11 @@ class WebServer
 	private DatabaseManager dm;
 	
 	HttpServer server;
+	AuthHandler auth;
+	PermissionIdentifier ADMIN_PERMISSION;
 	Map<String,RenderedImageStorage> renderedImageCache = new HashMap<String,RenderedImageStorage>();
-	private String cardHTML, settingsHTML, cardPackHTML, infoFieldHTML, accountHTML, notAdminHTML;
+	Map<String,PendingLinkInfo> pendingLinkInfo = new HashMap<String,PendingLinkInfo>();
+	private String cardHTML, settingsHTML, cardPackHTML, infoFieldHTML, accountHTML, notAdminHTML, linkmeHTML;
 	private byte[] botProfile;
 	
 	public WebServer(DatabaseManager databaseManager)
@@ -60,7 +63,7 @@ class WebServer
 					}
 				}
 			}
-			AuthHandler auth = new AuthHandler(dm.settings.authHandler, dm.settings.authApplicationKeys);
+			auth = new AuthHandler(dm.settings.authHandler, dm.settings.authApplicationKeys);
 			auth.maxlifetime = -1;	// don't let auth tokens time out to prevent people editing forms from losing their work
 			auth.registerCallbackEndpoint("/auth/callback");
 			PermissionIdentifier adminPermission = null;
@@ -89,6 +92,7 @@ class WebServer
 			}
 			else
 				System.out.println("No auth server found; skipping application / keys setup.");
+			this.ADMIN_PERMISSION = adminPermission;
 			final PermissionIdentifier ADMIN_PERMISSION = adminPermission;
 			
 			cardHTML = DropsBot.readResourceToString("cards.html");
@@ -97,6 +101,7 @@ class WebServer
 			infoFieldHTML = DropsBot.readResourceToString("infofields.html");
 			accountHTML = DropsBot.readResourceToString("account.html");
 			notAdminHTML = DropsBot.readResourceToString("notAdmin.html");
+			linkmeHTML = DropsBot.readResourceToString("linkme.html");
 			botProfile = DropsBot.readResource("botprofile.png");
 			
 			server.accept((req) -> {
@@ -216,6 +221,60 @@ class WebServer
 						"Redirecting you to <a href=\"/\">the homepage</a>",
 						"Location: /"
 					);
+				}
+				else if (req.matches(HttpVerb.GET, "/linkme") || req.matches(HttpVerb.GET, "/linkme/accept") || req.matches(HttpVerb.GET, "/linkme/reject"))
+				{
+					if (!auth.enforceValidCredentials(dm.settings.siteUrl))
+						return;
+					String name = req.getParam("name");
+					PendingLinkInfo info = pendingLinkInfo.get(name);
+					if (info == null)
+					{
+						System.out.println("linkme error: invalid link");
+						req.respond(linkmeHTML
+							.replaceAll("<<>>ERROR_MESSAGE<<>>", "Invalid link.")
+						);
+						return;
+					}
+					String pageHtml = linkmeHTML.replaceAll("<<>>DISCORD_USERNAME<<>>", info.discordUsername)
+												.replaceAll("<<>>DISCORD_HASH<<>>", info.discordHash)
+												.replaceAll("<<>>DISCORD_PROFILE_IMAGE<<>>", info.discordProfileImage)
+												.replaceAll("<<>>NAME<<>>", name);
+					if (!auth.username.equals(info.username))
+					{
+						System.out.println("linkme error: logged in as \"" + auth.username + "\" wanted \"" + info.username + "\"");
+						req.respond(pageHtml
+							.replaceAll("<<>>ERROR_MESSAGE<<>>", "Logged in as the wrong user! This request wants to link " + info.discordUsername + "#" + info.discordHash + " to " + info.username + ", but you are logged in as " + auth.username + ".")
+						);
+						return;
+					}
+					if (req.matches(HttpVerb.GET, "/linkme"))
+					{
+						System.out.println("linkme serve page");
+						req.respond(pageHtml);
+						return;
+					}
+					if (req.matches(HttpVerb.GET, "/linkme/accept"))
+					{
+						System.out.println("linkme accept");
+						boolean success = true;
+						if (!auth.checkPermissionExists(info.linkPermission))
+							success = auth.registerPermission(info.linkPermission);
+						success = success && auth.grantPermission(info.linkPermission);
+						if (success)
+						{
+							info.discordChannel.createMessage("Linked account \"" + info.discordUsername + "#" + info.discordHash + "\" with zkrAuth account \"" + info.username + "\"!").subscribe();
+							System.out.println("Linkme success");
+						}
+						else
+						{
+							info.discordChannel.createMessage("Failed to link account \"" + info.discordUsername + "#" + info.discordHash + "\" with zkrAuth account \"" + info.username + "\" :(").subscribe();
+							System.out.println("Linkme failure");
+						}
+					}
+					pendingLinkInfo.remove(name);
+					System.out.println("Linkme invalidated link");
+					return;
 				}
 				boolean localUserBypass = false;
 				if (req.isLocal())
@@ -584,8 +643,9 @@ class WebServer
 				{
 					String[] admins = auth.listPermissionUsers(ADMIN_PERMISSION);
 					String adminStr = "";
-					for (int i = 0; i < admins.length; i++)
-						adminStr += (i>0?", ":"") + "\"" + escapeString(admins[i]) + "\"";
+					if (admins != null)
+						for (int i = 0; i < admins.length; i++)
+							adminStr += (i>0?", ":"") + "\"" + escapeString(admins[i]) + "\"";
 					String resp = settingsHTML
 								.replaceAll("\\Q<<>>dropNumCards<<>>\\E", dm.settings.dropNumCards+"")
 								.replaceAll("\\Q<<>>dropCooldownMillis<<>>\\E", dm.settings.dropCooldownMillis+"")
