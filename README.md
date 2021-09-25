@@ -1,3 +1,5 @@
+# ![](/src/main/resources/botprofile.png) drops? Bot
+
 # About this Bot
 
 This is a Discord bot implementing a small card-collection game that allows users to collect new cards periodically, level up cards, answer trivia, and more!
