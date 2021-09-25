@@ -221,6 +221,18 @@ class WebServer
 						"Redirecting you to <a href=\"/\">the homepage</a>",
 						"Location: /"
 					);
+					return;
+				}
+				else if (req.matches(HttpVerb.POST, "/linkme/logout") || req.matches(HttpVerb.GET, "/linkme/logout"))
+				{
+					String name = req.getParam("name");
+					auth.logout();
+					req.respondWithHeaders1(
+						HttpStatus.TEMPORARY_REDIRECT_302,
+						"Redirecting you to <a href=\"/linkme?name=" + name + "\">/linkme?name=" + name + "</a>",
+						"Location: /linkme?name=" + name
+					);
+					return;
 				}
 				else if (req.matches(HttpVerb.GET, "/linkme") || req.matches(HttpVerb.GET, "/linkme/accept") || req.matches(HttpVerb.GET, "/linkme/reject"))
 				{
@@ -236,10 +248,11 @@ class WebServer
 						);
 						return;
 					}
-					String pageHtml = linkmeHTML.replaceAll("<<>>DISCORD_USERNAME<<>>", info.discordUsername)
-												.replaceAll("<<>>DISCORD_HASH<<>>", info.discordHash)
-												.replaceAll("<<>>DISCORD_PROFILE_IMAGE<<>>", info.discordProfileImage)
-												.replaceAll("<<>>NAME<<>>", name);
+					String pageHtml = linkmeHTML.replaceAll("<<>>DISCORD_USERNAME<<>>", escapeString(info.discordUsername))
+												.replaceAll("<<>>DISCORD_HASH<<>>", escapeString(info.discordHash))
+												.replaceAll("<<>>DISCORD_PROFILE_IMAGE<<>>", escapeString(info.discordProfileImage))
+												.replaceAll("<<>>USERNAME<<>>", escapeString(info.username))
+												.replaceAll("<<>>NAME<<>>", escapeString(name));
 					if (!auth.username.equals(info.username))
 					{
 						System.out.println("linkme error: logged in as \"" + auth.username + "\" wanted \"" + info.username + "\"");
@@ -251,7 +264,7 @@ class WebServer
 					if (req.matches(HttpVerb.GET, "/linkme"))
 					{
 						System.out.println("linkme serve page");
-						req.respond(pageHtml);
+						req.respond(pageHtml.replaceAll("<<>>ERROR_MESSAGE<<>>", ""));
 						return;
 					}
 					if (req.matches(HttpVerb.GET, "/linkme/accept"))
