@@ -111,7 +111,7 @@ class Settings extends DBEnabledClass
 				"INSERT INTO settings ("
 					+ "dropNumCards, dropCooldownMillis, dungeonOptions, dungeonCooldownMillis, trainCooldownMillis, cardsNeededToMerge, cardsNeededToFuse, serverPort, botPrefix, siteUrl, cardsFolder, authHandler, botToken, botClientId"
 				+ ") VALUES ("
-					+ "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?"
+					+ "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?"
 				+ ")"
 			);
 			statement.setInt(1, 3);
