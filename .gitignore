@@ -38,3 +38,4 @@ gradle-app.setting
 
 **.dropdata
 **.db
+drops-db-path.cfg
