@@ -82,6 +82,7 @@ class DiscordBot
 						{
 							user = new User(dm);
 							user.userId = discordUserId;
+							user.handleAdd();
 						}
 						catch (Exception ex)
 						{
