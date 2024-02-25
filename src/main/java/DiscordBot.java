@@ -98,7 +98,26 @@ class DiscordBot
 						String fuseCommand = "fuse";
 						for (int i = 0; i < dm.settings.cardsNeededToFuse; i++)
 							fuseCommand += " [cardId" + (i+1) + "]";
-						discordChannelObj.createMessage(("Commands:\n  ~drop\n  ~inventory\n  ~view [cardId]\n  ~dungeon\n  ~cooldown\n  ~train [cardId]\n  ~" + mergeCommand + "\n  ~favorite [cardId]\n  ~unfavorite [cardId]\n  ~fuse [1s|2s|...]\n  ~" + fuseCommand + "\n  ~linkme (account)\n  ~help\nAdmin Commands:\n  ~restart\n  ~setprefix [prefix]").replaceAll("\\~", dm.settings.botPrefix)).block();
+						discordChannelObj.createMessage(
+							(
+								"Commands:"
+								+ "\n  ~drop - Choose a card of unknown rarity to keep."
+								+ "\n  ~inventory - View your inventory."
+								+ "\n  ~view [cardId] - View a specific card."
+								+ "\n  ~dungeon - Answer trivia to keep a card of unknown rarity."
+								+ "\n  ~cooldown - View your cooldown times."
+								+ "\n  ~train [cardId] - Train a card to increase its level."
+								+ "\n  ~" + mergeCommand + " - Merge " + dm.settings.cardsNeededToMerge + " of a card with the same star level (at least one of them level 100) to get a copy with a higher star level."
+								+ "\n  ~favorite [cardId] - Mark a card as favorited."
+								+ "\n  ~unfavorite [cardId] - Unmark a card as favorited."
+								+ "\n  ~fuse [1s|2s|...] - Fuse your non-favorited cards of a given star level to get cards of a higher star level."
+								+ "\n  ~" + fuseCommand + " - Fuse " + dm.settings.cardsNeededToFuse + " cards with the same star level to get a card of a higher star level." 
+								+ "\n  ~linkme (account) - Link your discord account to your zkrAuth account."
+								+ "\n  ~help - View this help message."
+								+ "\nAdmin Commands:"
+								+ "\n  ~restart - Restart the bot."
+								+ "\n  ~setprefix [prefix] - Set the bot's command prefix."
+							).replaceAll("\\~", dm.settings.botPrefix)).block();
 					}
 					if ("drop".equalsIgnoreCase(command) || "dr".equalsIgnoreCase(command))
 					{
